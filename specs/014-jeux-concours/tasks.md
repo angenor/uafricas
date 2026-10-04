@@ -77,6 +77,28 @@ US7 terminée (T061 à T065) : premier concours complet de bout en bout. Vérifi
 - **Défaut trouvé à la recette** : le podium plaçait ses cartes d'après le RANG, si bien que deux 2ᵉ ex aequo délogeaient le 1er du centre. L'ordre suit désormais la position dans le podium, la hauteur de marche le rang.
 - La première comparaison SC-013 a échoué à tort : elle incluait les comptes d'engagement CRÉÉS au versement de la réputation (0 point, statut « membre », soit l'état implicite d'un membre sans compte).
 
+US8 et US9 terminées (T066 à T074). Vérifié par l'API et dans le navigateur :
+- **jury** : délibération sans résultats publiés, galerie anonyme, choix parmi les finalistes, podium du jury en tête, repli sur la communauté passé le délai ;
+- **suivi** : le compte à 31 votes dans la même minute est signalé (« rythme ») ; ses voix s'écartent et se rétablissent, avec une ligne d'audit à chaque fois ;
+- **signalement** : refusé sur sa propre photo ; suspension au 11ᵉ signalement distinct (un doublon ne compte pas), auteur notifié, photo retirée de la galerie et du classement ; rétablissement avec compteur remis à zéro ;
+- **compte suspendu** : sa photo sort du classement.
+
+Écarts :
+- Le suivi et les finalistes appellent `classement()`, le calcul des résultats : il n'y en a toujours qu'un.
+- Le signalement réutilise la modale commune `AfricansModaleSignalement` ; le motif enregistré est le libellé choisi, suivi du commentaire.
+- Avec des voix insérées en SQL pour la recette, les « présentations par photo » du suivi restent à 0 : elles ne sont comptées que par le tirage. Le test de l'étape 5, mené par l'API, les avait vérifiées (18 à 19 par photo).
+
+Finitions terminées (T075 à T080) : **les 80 tâches sont faites**.
+- **Relecture PC1** : un trou fermé. `retablir_participation` pouvait republier une photo suspendue après les résultats ; elle réapparaissait dans une galerie figée, sans rang. Elle résout désormais son concours et refuse s'il est terminé.
+- **PC4** : environ 4 % de solutions égales à l'identité parmi les épreuves dérivées, soit le hasard attendu (1 sur 24 pour quatre éléments), et aucune parmi les épreuves saisies.
+- **Avertissements** : `ParticipationRow` et `PARTICIPATION_COLONNES`, jamais employés, sont supprimés ; plus aucun avertissement dans les fichiers du jeu.
+- **Recette finale** :
+  - 18 combinaisons de pages et de largeurs sans débordement ; aucune classe daisyUI hors du back-office ;
+  - `pnpm build` et `cargo build` passent ;
+  - migration `38` rejouée deux fois, 1 120 servables avant et après ;
+  - journal des gains cohérent ; non-régression de la 013.
+- **Écart de lecture à la recette** : les épreuves typées dérivées étaient jouables, alors qu'elles naissent candidates. L'audit montre une revue faite à la main dans Safari avec le compte test-admin : ce n'est pas un défaut.
+
 **Les cinq points de conception de [plan.md](./plan.md)**, rappelés dans les tâches qu'ils concernent (repère ⚠️ PCn) :
 - **PC1** : `resoudre_concours` est appelée par toute route qui lit un concours.
 - **PC2** : toutes les requêtes qui remplissent `EpreuveRow` lisent les nouvelles colonnes.
@@ -390,13 +412,13 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
 
 **Independent Test** : [quickstart.md, scénario 7](./quickstart.md).
 
-- [ ] T066 [US8] Dans `uafricas_backend/src/handlers/admin/jeu_concours.rs`, ajouter :
+- [X] T066 [US8] Dans `uafricas_backend/src/handlers/admin/jeu_concours.rs`, ajouter :
   - `finalistes`, en phase `deliberation` : classement provisoire calculé comme `etablir_resultats` **sans écrire**, puis les `jury_finalistes` premiers hors participations sous le seuil ;
   - `deliberer` : 1 à 3 participations distinctes parmi les finalistes ; écrit `podium_jury`, `delibere_par` et `delibere_at` ; audit `JURY_DELIBERATION`.
 
   Factoriser le calcul du classement dans `services/jeu_concours.rs` pour que `finalistes` et `etablir_resultats` partagent **la même** fonction.
-- [ ] T067 [P] [US8] Ajouter l'onglet « Jury » à `uafricas_frontend/app/pages/admin/activites/concours/[id].vue` : finalistes en grand, choix des 3 places, confirmation.
-- [ ] T068 [US8] Dérouler [quickstart.md, scénario 7](./quickstart.md), dont le repli sur le classement communautaire une fois `jury_delai_jours` passé (dates en SQL).
+- [X] T067 [P] [US8] Ajouter l'onglet « Jury » à `uafricas_frontend/app/pages/admin/activites/concours/[id].vue` : finalistes en grand, choix des 3 places, confirmation.
+- [X] T068 [US8] Dérouler [quickstart.md, scénario 7](./quickstart.md), dont le repli sur le classement communautaire une fois `jury_delai_jours` passé (dates en SQL).
 
 ---
 
@@ -406,28 +428,28 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
 
 **Independent Test** : [quickstart.md, scénario 8](./quickstart.md).
 
-- [ ] T069 [US9] Dans `uafricas_backend/src/handlers/admin/jeu_concours.rs`, ajouter `suivi` ([api-admin.md §4](./contracts/api-admin.md)) : volumes par motif d'écart, votants, présentations (min, max, moyenne), classement provisoire (même fonction que T066), et `comptes_signales` calculés à la lecture (plus de 30 votes en une minute, plus de 200 votes, préférence de 90 % ou plus sur au moins 10 confrontations). Ajouter aussi `ecarter_votant` et `retablir_votant` (409 après les résultats ; audits `VOIX_ECARTEES` et `VOIX_RETABLIES`).
-- [ ] T070 [US9] Ajouter `signaler` à `uafricas_backend/src/handlers/jeu_concours.rs` :
+- [X] T069 [US9] Dans `uafricas_backend/src/handlers/admin/jeu_concours.rs`, ajouter `suivi` ([api-admin.md §4](./contracts/api-admin.md)) : volumes par motif d'écart, votants, présentations (min, max, moyenne), classement provisoire (même fonction que T066), et `comptes_signales` calculés à la lecture (plus de 30 votes en une minute, plus de 200 votes, préférence de 90 % ou plus sur au moins 10 confrontations). Ajouter aussi `ecarter_votant` et `retablir_votant` (409 après les résultats ; audits `VOIX_ECARTEES` et `VOIX_RETABLIES`).
+- [X] T070 [US9] Ajouter `signaler` à `uafricas_backend/src/handlers/jeu_concours.rs` :
   - une fois par membre (`ON CONFLICT DO NOTHING`), pas sur sa propre participation ;
   - recompte, puis `suspendue` **au-delà de 10** (même constante et même comparateur que `SEUIL_SIGNALEMENTS_SUSPENSION_MEDIA`) ;
   - notification `jeu.participation_suspendue` à l'auteur.
 
   `retablir` (T043) remet `nombre_signalements` à 0.
-- [ ] T071 [P] [US9] Créer `uafricas_frontend/app/components/jeu/SignalerParticipation.vue` (motif, confirmation, Tailwind pur) et le monter sur la galerie et la confrontation.
-- [ ] T072 [P] [US9] Ajouter les onglets « Suivi du vote » (chiffres, comptes signalés, écarter ou rétablir les voix) et « Participations » (avec signalements) à `uafricas_frontend/app/pages/admin/activites/concours/[id].vue`.
+- [X] T071 [P] [US9] Créer `uafricas_frontend/app/components/jeu/SignalerParticipation.vue` (motif, confirmation, Tailwind pur) et le monter sur la galerie et la confrontation.
+- [X] T072 [P] [US9] Ajouter les onglets « Suivi du vote » (chiffres, comptes signalés, écarter ou rétablir les voix) et « Participations » (avec signalements) à `uafricas_frontend/app/pages/admin/activites/concours/[id].vue`.
 - [X] T073 [US9] Rendre visible dans le règlement public de chaque concours (`uafricas_frontend/app/pages/activites/concours/[id].vue`) les règles d'admissibilité des voix (FR-040), en texte fixe ajouté au règlement saisi.
-- [ ] T074 [US9] Dérouler [quickstart.md, scénario 8](./quickstart.md).
+- [X] T074 [US9] Dérouler [quickstart.md, scénario 8](./quickstart.md).
 
 ---
 
 ## Phase 12: Polish & Cross-Cutting Concerns
 
-- [ ] T075 Relire les points de conception PC1 à PC5. PC1 : lister toutes les routes qui lisent un concours, et vérifier que chacune appelle `resoudre_concours`. PC2 : vérifier toutes les lectures de `EpreuveRow`. PC4 : vérifier sur 20 épreuves saisies et 20 dérivées que la solution n'est pas la permutation identité **pour toutes**.
-- [ ] T076 [P] Parcourir `/activites/concours/**` et les nouvelles épreuves à 375, 768 et 1280 px : aucun débordement, carte et paires utilisables au doigt. Aucune classe daisyUI hors `/admin/**`.
-- [ ] T077 Lancer `cargo build` et `pnpm build` ; aucun avertissement dans les fichiers touchés ; diagnostics VS Code propres.
-- [ ] T078 Critères de sortie de [quickstart.md](./quickstart.md) : migration rejouée, aucune clé d'idempotence en double, agrégats égaux au journal, non-régression de la 013 (partie, défi, duel différé et direct, Championship sur des épreuves `choix`).
-- [ ] T079 Mettre à jour `CLAUDE.md` : composables `useConcours` et `useAdminConcours`, seed `94_seed_local_jeu_types.sql` dans le tableau des seeds, et **une ligne** d'index « Recent Changes » citant `38_jeu_concours.sql`.
-- [ ] T080 Rédiger `specs/014-jeux-concours/pr-description.md` : contenu, migration `38` **avant** le code (elle suppose `37`), dérivation et revue des nouvelles formes, premier concours, hypothèses H1 à H4 à faire confirmer par le client.
+- [X] T075 Relire les points de conception PC1 à PC5. PC1 : lister toutes les routes qui lisent un concours, et vérifier que chacune appelle `resoudre_concours`. PC2 : vérifier toutes les lectures de `EpreuveRow`. PC4 : vérifier sur 20 épreuves saisies et 20 dérivées que la solution n'est pas la permutation identité **pour toutes**.
+- [X] T076 [P] Parcourir `/activites/concours/**` et les nouvelles épreuves à 375, 768 et 1280 px : aucun débordement, carte et paires utilisables au doigt. Aucune classe daisyUI hors `/admin/**`.
+- [X] T077 Lancer `cargo build` et `pnpm build` ; aucun avertissement dans les fichiers touchés ; diagnostics VS Code propres.
+- [X] T078 Critères de sortie de [quickstart.md](./quickstart.md) : migration rejouée, aucune clé d'idempotence en double, agrégats égaux au journal, non-régression de la 013 (partie, défi, duel différé et direct, Championship sur des épreuves `choix`).
+- [X] T079 Mettre à jour `CLAUDE.md` : composables `useConcours` et `useAdminConcours`, seed `94_seed_local_jeu_types.sql` dans le tableau des seeds, et **une ligne** d'index « Recent Changes » citant `38_jeu_concours.sql`.
+- [X] T080 Rédiger `specs/014-jeux-concours/pr-description.md` : contenu, migration `38` **avant** le code (elle suppose `37`), dérivation et revue des nouvelles formes, premier concours, hypothèses H1 à H4 à faire confirmer par le client.
 
 ---
 

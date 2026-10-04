@@ -230,7 +230,7 @@ const versConnexion = () => navigateTo({ path: '/login', query: { redirect: rout
           <p v-if="phase === 'appel' || phase === 'vote'" class="text-[13px]/[1.4] text-af-atone">
             Les auteurs restent anonymes et l'ordre change à chaque visite jusqu'aux résultats.
           </p>
-          <JeuGalerieConcours :elements="photos" />
+          <JeuGalerieConcours :elements="photos" :concours-id="phase === 'appel' || phase === 'vote' ? concours.id : undefined" />
         </section>
       </template>
     </div>

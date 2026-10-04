@@ -92,6 +92,25 @@ export interface ParticipationModerationAPI {
   created_at: string
 }
 
+export interface FinalisteAPI {
+  participation_id: string
+  media_url: string
+  legende: string | null
+  auteur: string
+  rang: number
+  /** En pourcentage. */
+  taux: number
+  duels: number
+}
+
+export interface SuiviVoteAPI {
+  votes: { total: number, comptes: number, ecartes: Record<string, number> }
+  votants: number
+  presentations: { min: number | null, max: number | null, moyenne: number | null }
+  classement_provisoire: FinalisteAPI[]
+  comptes_signales: Array<{ utilisateur_id: string, nom: string, motifs: Array<'rythme' | 'volume' | 'preference'>, votes: number, ecarte_par_admin: boolean }>
+}
+
 export interface PageAPI<T> {
   data: T[]
   total: number
@@ -154,9 +173,26 @@ export const useAdminConcours = () => {
       method: 'POST',
     })).data
 
+  const finalistes = async (id: string) =>
+    (await adminFetch<ApiResponse<FinalisteAPI[]>>(`/api/admin/jeu/concours/${id}/finalistes`)).data ?? []
+
+  const deliberer = async (id: string, podium: string[]) =>
+    (await adminFetch<ApiResponse<ConcoursAdminAPI>>(`/api/admin/jeu/concours/${id}/deliberation`, {
+      method: 'POST', body: { podium },
+    })).data
+
+  const suivi = async (id: string) =>
+    (await adminFetch<ApiResponse<SuiviVoteAPI>>(`/api/admin/jeu/concours/${id}/suivi`)).data
+
+  const reglerVoix = async (id: string, votant: string, action: 'ecarter' | 'retablir') =>
+    adminFetch<ApiResponse<Record<string, number>>>(`/api/admin/jeu/concours/${id}/votants/${votant}/${action}`, {
+      method: 'POST',
+    })
+
   return {
     lister, obtenir, creer, modifier, supprimer, annuler,
     listerParticipations, accepter, rejeter, modererGroupe, retablir,
+    finalistes, deliberer, suivi, reglerVoix,
   }
 }
 

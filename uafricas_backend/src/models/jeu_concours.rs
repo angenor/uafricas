@@ -106,25 +106,6 @@ impl ConcoursRow {
 
 // ─── Participations ──────────────────────────────────────────────────────────
 
-#[derive(Debug, Clone, Serialize, FromRow)]
-pub struct ParticipationRow {
-    pub id: Uuid,
-    pub concours_id: Uuid,
-    pub auteur_id: Uuid,
-    pub media_type: String,
-    pub media_url: String,
-    pub legende: Option<String>,
-    pub etat: String,
-    pub motif_rejet: Option<String>,
-    pub nombre_presentations: i32,
-    pub nombre_signalements: i32,
-    pub created_at: DateTime<Utc>,
-}
-
-pub const PARTICIPATION_COLONNES: &str = "p.id, p.concours_id, p.auteur_id, p.media_type, \
-     p.media_url, p.legende, p.etat, p.motif_rejet, p.nombre_presentations, \
-     p.nombre_signalements, p.created_at";
-
 /// Une participation telle que tout le monde la voit pendant l'appel et le
 /// vote : AUCUN champ ne dit qui l'a déposée (FR-039).
 #[derive(Debug, Clone, Serialize, FromRow)]

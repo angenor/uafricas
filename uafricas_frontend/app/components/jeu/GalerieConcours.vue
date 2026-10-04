@@ -19,6 +19,7 @@
           </div>
           <figcaption class="flex flex-col gap-1 p-2.5">
             <span v-if="p.legende" class="line-clamp-2 text-[13px]/[1.4] text-af-encre">{{ p.legende }}</span>
+            <JeuSignalerParticipation v-if="concoursId && connecte" :concours-id="concoursId" :participation-id="p.id" />
             <template v-if="classee(p)">
               <span class="text-[12px]/[1.3] font-bold text-af-corps">{{ p.auteur.prenom }} {{ p.auteur.nom }}</span>
               <span v-if="p.taux != null" class="text-[12px]/[1.3] text-af-atone">
@@ -41,7 +42,14 @@ import type { ParticipationAnonymeAPI, ParticipationClasseeAPI } from '~/composa
  * n'a rien à cacher, il n'a rien reçu. Après les résultats, elles arrivent
  * classées, auteurs révélés.
  */
-defineProps<{ elements: Array<ParticipationAnonymeAPI | ParticipationClasseeAPI> }>()
+defineProps<{
+  elements: Array<ParticipationAnonymeAPI | ParticipationClasseeAPI>
+  /** Permet le signalement (membres connectés). */
+  concoursId?: string
+}>()
+
+const userStore = useUserStore()
+const connecte = computed(() => !!userStore.accessToken)
 
 const classee = (p: ParticipationAnonymeAPI | ParticipationClasseeAPI): p is ParticipationClasseeAPI =>
   'auteur' in p

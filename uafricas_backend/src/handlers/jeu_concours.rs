@@ -577,3 +577,88 @@ pub async fn voter(
     let suivante = cycle::voter(pool.get_ref(), &concours, votant, confrontation, gauche).await?;
     Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(suivante), error: None }))
 }
+
+// ─── Signalement (US9, research D12) ─────────────────────────────────────────
+
+/// Au-delà de ce nombre de signalements distincts, la photo est suspendue :
+/// même seuil et même comparateur que les médias (`> 10`).
+const SEUIL_SIGNALEMENTS_PARTICIPATION: i64 = 10;
+
+#[derive(Debug, Deserialize)]
+pub struct SignalementRequest {
+    pub motif: String,
+}
+
+/// POST /api/jeu/concours/{id}/participations/{pid}/signaler — membre.
+/// Une fois par membre ; un second envoi ne fait rien. Au 11ᵉ signalement
+/// distinct, la photo sort du vote et de la galerie.
+pub async fn signaler(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<(Uuid, Uuid)>,
+    body: web::Json<SignalementRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    let membre = garde_joueur(pool.get_ref(), &req).await?;
+    let (id, pid) = path.into_inner();
+    let motif = body.motif.trim();
+    if motif.is_empty() {
+        return Err(ApiErreur::Validation("Dites-nous ce qui ne va pas".into()));
+    }
+    cycle::resoudre_concours(pool.get_ref(), id).await?;
+    let (auteur, etat): (Uuid, String) = sqlx::query_as(
+        "SELECT auteur_id, etat FROM jeu.participation WHERE id = $1 AND concours_id = $2",
+    )
+    .bind(pid)
+    .bind(id)
+    .fetch_optional(pool.get_ref())
+    .await?
+    .ok_or_else(|| ApiErreur::NonTrouve("Photo introuvable".into()))?;
+    if auteur == membre {
+        return Err(ApiErreur::Validation("On ne signale pas sa propre photo".into()));
+    }
+
+    let mut tx = pool.begin().await?;
+    sqlx::query(
+        "INSERT INTO jeu.signalement_participation (participation_id, utilisateur_id, motif)
+         VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+    )
+    .bind(pid)
+    .bind(membre)
+    .bind(motif)
+    .execute(&mut *tx)
+    .await?;
+    let nombre: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM jeu.signalement_participation WHERE participation_id = $1")
+        .bind(pid)
+        .fetch_one(&mut *tx)
+        .await?;
+    let suspendue = sqlx::query(
+        "UPDATE jeu.participation
+            SET nombre_signalements = $2,
+                etat = CASE WHEN $2 > $3 AND etat = 'publiee' THEN 'suspendue' ELSE etat END,
+                updated_at = NOW()
+          WHERE id = $1
+         RETURNING etat",
+    )
+    .bind(pid)
+    .bind(nombre as i32)
+    .bind(SEUIL_SIGNALEMENTS_PARTICIPATION as i32)
+    .fetch_one(&mut *tx)
+    .await
+    .map(|ligne: sqlx::postgres::PgRow| {
+        use sqlx::Row;
+        ligne.get::<String, _>("etat") == "suspendue"
+    })?;
+    tx.commit().await?;
+
+    if suspendue && etat == "publiee" {
+        crate::models::notification::creer_notification(
+            pool.get_ref(),
+            auteur,
+            crate::services::jeu_concours::notif::PARTICIPATION_SUSPENDUE,
+            "Votre photo de concours a été suspendue après plusieurs signalements. L'équipe va la relire.",
+            Some(&crate::services::jeu_concours::lien_concours(id)),
+        )
+        .await;
+    }
+    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(serde_json::json!({ "signale": true })), error: None }))
+}

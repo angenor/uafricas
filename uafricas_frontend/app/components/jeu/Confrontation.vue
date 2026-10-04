@@ -39,6 +39,10 @@
           </span>
         </button>
       </div>
+      <div class="flex justify-between">
+        <JeuSignalerParticipation :key="`g-${tirage.gauche.id}`" :concours-id="concoursId" :participation-id="tirage.gauche.id" />
+        <JeuSignalerParticipation :key="`d-${tirage.droite.id}`" :concours-id="concoursId" :participation-id="tirage.droite.id" />
+      </div>
       <p class="hidden text-center text-[12px]/[1.4] text-af-atone sm:block">Au clavier : ← pour la photo de gauche, → pour celle de droite.</p>
     </template>
 

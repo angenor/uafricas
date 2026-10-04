@@ -181,5 +181,9 @@ export const useConcours = () => {
   const voter = (id: string, confrontationId: string, choix: 'gauche' | 'droite') =>
     appel<TirageAPI>(`/${id}/confrontations/${confrontationId}/voter`, { method: 'POST', body: { choix } })
 
-  return { lister, obtenir, galerie, deposer, remplacer, retirer, mesParticipations, confrontation, voter }
+  /** Une fois par membre ; au-delà du seuil, la photo est suspendue. */
+  const signaler = (id: string, pid: string, motif: string) =>
+    appel<{ signale: boolean }>(`/${id}/participations/${pid}/signaler`, { method: 'POST', body: { motif } })
+
+  return { lister, obtenir, galerie, deposer, remplacer, retirer, mesParticipations, confrontation, voter, signaler }
 }

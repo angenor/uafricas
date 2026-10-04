@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * Fiche d'un concours (feature 014). `/admin/activites/concours/nouveau`
- * crée ; tout autre segment édite. Les onglets « Jury » et « Suivi du vote »
- * viennent avec les paliers 5 et 6.
+ * crée ; tout autre segment édite. Onglets : fiche, participations, suivi du
+ * vote (à partir du vote), jury (si le concours en a un).
  */
 import {
   LIBELLES_PHASE,
@@ -43,7 +43,7 @@ const formVide = (): ConcoursForm => ({
 
 const form = ref<ConcoursForm>(formVide())
 const concours = ref<ConcoursAdminAPI | null>(null)
-const onglet = ref<'fiche' | 'participations'>('fiche')
+const onglet = ref<'fiche' | 'participations' | 'suivi' | 'jury'>('fiche')
 const chargement = ref(true)
 const enCours = ref(false)
 const erreur = ref('')
@@ -177,6 +177,10 @@ onMounted(async () => {
         <button type="button" role="tab" class="tab" :class="onglet === 'participations' && 'tab-active'" @click="onglet = 'participations'">
           Participations <span v-if="concours.en_attente" class="badge badge-warning badge-sm ml-2">{{ concours.en_attente }}</span>
         </button>
+        <button v-if="['vote', 'deliberation', 'resultats'].includes(concours.phase)" type="button" role="tab" class="tab" :class="onglet === 'suivi' && 'tab-active'" @click="onglet = 'suivi'">Suivi du vote</button>
+        <button v-if="concours.jury" type="button" role="tab" class="tab" :class="onglet === 'jury' && 'tab-active'" @click="onglet = 'jury'">
+          Jury <span v-if="concours.phase === 'deliberation'" class="badge badge-primary badge-sm ml-2">à faire</span>
+        </button>
       </div>
 
       <form v-if="onglet === 'fiche'" class="card bg-base-100 shadow-sm" @submit.prevent="enregistrer">
@@ -216,7 +220,13 @@ onMounted(async () => {
         </div>
       </form>
 
-      <AdminJeuModerationParticipations v-else-if="concours" :concours-id="concours.id" @change="recharger" />
+      <AdminJeuModerationParticipations v-else-if="concours && onglet === 'participations'" :concours-id="concours.id" @change="recharger" />
+      <AdminJeuSuiviVote v-else-if="concours && onglet === 'suivi'" :concours="concours" />
+      <AdminJeuJuryConcours
+        v-else-if="concours && onglet === 'jury'"
+        :concours="concours"
+        @delibere="(c) => { remplir(c); onglet = 'fiche'; notifier('Podium fixé : les résultats sont publiés.') }"
+      />
     </template>
   </div>
 </template>

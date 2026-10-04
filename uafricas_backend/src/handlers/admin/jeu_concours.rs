@@ -523,6 +523,12 @@ pub async fn retablir_participation(
     verifier_permission!(admin, "jeu", "gerer");
     let id = path.into_inner();
     let avant = charger_moderation(pool.get_ref(), id).await?;
+    // PC1 : un concours terminé a figé sa galerie et son classement ; y
+    // republier une photo la ferait réapparaître sans rang.
+    let concours = cycle::resoudre_concours(pool.get_ref(), avant.concours_id).await?;
+    if matches!(concours.phase(Utc::now()), Phase::Resultats | Phase::Annule) {
+        return Err(ApiErreur::Conflit("Ce concours est terminé : ses participations sont figées".into()));
+    }
     let touchees = sqlx::query(
         "UPDATE jeu.participation SET etat = 'publiee', nombre_signalements = 0, updated_at = NOW()
           WHERE id = $1 AND etat = 'suspendue'",
@@ -566,3 +572,302 @@ pub async fn signalements_participation(
     Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(data), error: None }))
 }
 
+
+// ─── Jury (US8) ──────────────────────────────────────────────────────────────
+
+/// Une participation candidate au podium, telle que le jury la voit.
+#[derive(Debug, serde::Serialize)]
+pub struct Finaliste {
+    pub participation_id: Uuid,
+    pub media_url: String,
+    pub legende: Option<String>,
+    pub auteur: String,
+    pub rang: i16,
+    pub taux: f64,
+    pub duels: i32,
+}
+
+/// Le classement provisoire, avec de quoi l'afficher : même calcul que les
+/// résultats (`cycle::classement`), sans rien écrire.
+async fn classement_affichable(pool: &PgPool, concours: &ConcoursRow) -> Result<Vec<Finaliste>, ApiErreur> {
+    let mut conn = pool.acquire().await?;
+    let lignes = cycle::classement(&mut conn, concours).await?;
+    let mut sortie = Vec::with_capacity(lignes.len());
+    for l in lignes {
+        let (media_url, legende, prenom, nom): (String, Option<String>, String, String) = sqlx::query_as(
+            "SELECT p.media_url, p.legende, u.prenom, u.nom FROM jeu.participation p
+               JOIN iam.utilisateur u ON u.id = p.auteur_id WHERE p.id = $1",
+        )
+        .bind(l.participation_id)
+        .fetch_one(&mut *conn)
+        .await?;
+        if l.sous_seuil {
+            continue;
+        }
+        sortie.push(Finaliste {
+            participation_id: l.participation_id,
+            media_url,
+            legende,
+            auteur: format!("{prenom} {nom}"),
+            rang: l.rang,
+            taux: (l.taux * 1000.0).round() / 10.0,
+            duels: l.duels,
+        });
+    }
+    Ok(sortie)
+}
+
+/// GET /api/admin/jeu/concours/{id}/finalistes — phase `deliberation`.
+pub async fn finalistes(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "jeu", "gerer");
+    let concours = cycle::resoudre_concours(pool.get_ref(), path.into_inner()).await?;
+    if concours.phase(Utc::now()) != Phase::Deliberation {
+        return Err(ApiErreur::Conflit("Ce concours n'est pas en délibération".into()));
+    }
+    let mut liste = classement_affichable(pool.get_ref(), &concours).await?;
+    liste.truncate(concours.jury_finalistes as usize);
+    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(liste), error: None }))
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct DeliberationRequest {
+    pub podium: Vec<Uuid>,
+}
+
+/// POST /api/admin/jeu/concours/{id}/deliberation : le jury fixe 1 à 3 places
+/// parmi les finalistes. La lecture suivante établit les résultats.
+pub async fn deliberer(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<DeliberationRequest>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "jeu", "gerer");
+    let id = path.into_inner();
+    let concours = cycle::resoudre_concours(pool.get_ref(), id).await?;
+    if concours.phase(Utc::now()) != Phase::Deliberation {
+        return Err(ApiErreur::Conflit("Ce concours n'est pas en délibération".into()));
+    }
+    let podium = &body.podium;
+    let distincts: std::collections::HashSet<_> = podium.iter().collect();
+    if podium.is_empty() || podium.len() > 3 || distincts.len() != podium.len() {
+        return Err(ApiErreur::Validation("Le podium compte une à trois photos différentes".into()));
+    }
+    let mut liste = classement_affichable(pool.get_ref(), &concours).await?;
+    liste.truncate(concours.jury_finalistes as usize);
+    if podium.iter().any(|p| !liste.iter().any(|f| f.participation_id == *p)) {
+        return Err(ApiErreur::Validation("Le jury choisit parmi les finalistes seulement".into()));
+    }
+
+    sqlx::query(
+        "UPDATE jeu.concours SET podium_jury = $2, delibere_par = $3, delibere_at = NOW(), updated_at = NOW()
+          WHERE id = $1 AND delibere_at IS NULL",
+    )
+    .bind(id)
+    .bind(podium)
+    .bind(admin.id)
+    .execute(pool.get_ref())
+    .await?;
+    auditer(pool.get_ref(), &req, admin.id, "JURY_DELIBERATION", "concours", Some(id), None,
+        Some(serde_json::json!({ "podium": podium }))).await;
+
+    // La phase devient « résultats » : on les établit tout de suite.
+    let apres = cycle::resoudre_concours(pool.get_ref(), id).await?;
+    let vue = vue_admin(pool.get_ref(), apres).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(vue), error: None }))
+}
+
+// ─── Suivi du vote et anti-fraude (US9, research D9) ─────────────────────────
+
+/// Seuils des signaux, calculés à la lecture et jamais stockés.
+const SIGNAL_VOTES_PAR_MINUTE: i64 = 30;
+const SIGNAL_VOTES_TOTAL: i64 = 200;
+const SIGNAL_PREFERENCE_MIN: i64 = 10;
+const SIGNAL_PREFERENCE_PART: f64 = 0.9;
+
+#[derive(Debug, serde::Serialize)]
+pub struct CompteSignale {
+    pub utilisateur_id: Uuid,
+    pub nom: String,
+    pub motifs: Vec<&'static str>,
+    pub votes: i64,
+    pub ecarte_par_admin: bool,
+}
+
+/// GET /api/admin/jeu/concours/{id}/suivi : volumes, équilibre, classement
+/// provisoire et comptes au comportement anormal. Visible des seuls
+/// administrateurs (FR-039, FR-041).
+pub async fn suivi(
+    admin: AdminUtilisateur,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "jeu", "gerer");
+    let concours = cycle::resoudre_concours(pool.get_ref(), path.into_inner()).await?;
+    let id = concours.id;
+    let p = pool.get_ref();
+
+    let (total, comptes): (i64, i64) = sqlx::query_as(
+        "SELECT COUNT(*), COUNT(*) FILTER (WHERE comptee) FROM jeu.confrontation
+          WHERE concours_id = $1 AND choix_id IS NOT NULL",
+    )
+    .bind(id)
+    .fetch_one(p)
+    .await?;
+    let ecartes: Vec<(String, i64)> = sqlx::query_as(
+        "SELECT motif_ecart, COUNT(*) FROM jeu.confrontation
+          WHERE concours_id = $1 AND motif_ecart IS NOT NULL GROUP BY 1",
+    )
+    .bind(id)
+    .fetch_all(p)
+    .await?;
+    let votants: i64 = sqlx::query_scalar(
+        "SELECT COUNT(DISTINCT votant_id) FROM jeu.confrontation WHERE concours_id = $1 AND choix_id IS NOT NULL",
+    )
+    .bind(id)
+    .fetch_one(p)
+    .await?;
+    let (pmin, pmax, pmoy): (Option<i32>, Option<i32>, Option<f64>) = sqlx::query_as(
+        "SELECT MIN(nombre_presentations), MAX(nombre_presentations), AVG(nombre_presentations)::float8
+           FROM jeu.participation WHERE concours_id = $1 AND etat = 'publiee'",
+    )
+    .bind(id)
+    .fetch_one(p)
+    .await?;
+
+    // Signaux : rythme, volume, préférence systématique.
+    let rythme: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT DISTINCT votant_id FROM (
+             SELECT votant_id, date_trunc('minute', vote_at) AS m, COUNT(*) AS n FROM jeu.confrontation
+              WHERE concours_id = $1 AND choix_id IS NOT NULL GROUP BY 1, 2) x
+          WHERE n > $2",
+    )
+    .bind(id)
+    .bind(SIGNAL_VOTES_PAR_MINUTE)
+    .fetch_all(p)
+    .await?;
+    let volume: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT votant_id FROM jeu.confrontation WHERE concours_id = $1 AND choix_id IS NOT NULL
+          GROUP BY 1 HAVING COUNT(*) > $2",
+    )
+    .bind(id)
+    .bind(SIGNAL_VOTES_TOTAL)
+    .fetch_all(p)
+    .await?;
+    let preference: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT DISTINCT votant_id FROM (
+             SELECT c.votant_id, x.pid, COUNT(*) AS n, COUNT(*) FILTER (WHERE c.choix_id = x.pid) AS pour
+               FROM jeu.confrontation c
+               CROSS JOIN LATERAL (VALUES (c.a_id), (c.b_id)) AS x(pid)
+              WHERE c.concours_id = $1 AND c.choix_id IS NOT NULL
+              GROUP BY 1, 2) y
+          WHERE n >= $2 AND pour::float8 / n >= $3",
+    )
+    .bind(id)
+    .bind(SIGNAL_PREFERENCE_MIN)
+    .bind(SIGNAL_PREFERENCE_PART)
+    .fetch_all(p)
+    .await?;
+
+    let mut suspects: Vec<Uuid> = rythme.iter().chain(&volume).chain(&preference).copied().collect();
+    suspects.sort();
+    suspects.dedup();
+    let mut comptes_signales = Vec::with_capacity(suspects.len());
+    for u in suspects {
+        let (prenom, nom, votes, ecarte): (String, String, i64, bool) = sqlx::query_as(
+            "SELECT u.prenom, u.nom,
+                    (SELECT COUNT(*) FROM jeu.confrontation WHERE concours_id = $2 AND votant_id = u.id AND choix_id IS NOT NULL),
+                    EXISTS (SELECT 1 FROM jeu.confrontation WHERE concours_id = $2 AND votant_id = u.id AND motif_ecart = 'ecartee_admin')
+               FROM iam.utilisateur u WHERE u.id = $1",
+        )
+        .bind(u)
+        .bind(id)
+        .fetch_one(p)
+        .await?;
+        let mut motifs = Vec::new();
+        if rythme.contains(&u) { motifs.push("rythme"); }
+        if volume.contains(&u) { motifs.push("volume"); }
+        if preference.contains(&u) { motifs.push("preference"); }
+        comptes_signales.push(CompteSignale { utilisateur_id: u, nom: format!("{prenom} {nom}"), motifs, votes, ecarte_par_admin: ecarte });
+    }
+
+    let classement = classement_affichable(p, &concours).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({
+            "votes": { "total": total, "comptes": comptes,
+                       "ecartes": ecartes.into_iter().collect::<std::collections::HashMap<_, _>>() },
+            "votants": votants,
+            "presentations": { "min": pmin, "max": pmax, "moyenne": pmoy.map(|m| (m * 10.0).round() / 10.0) },
+            "classement_provisoire": classement,
+            "comptes_signales": comptes_signales,
+        })),
+        error: None,
+    }))
+}
+
+/// Écarter (ou rétablir) toutes les voix d'un votant dans un concours, tant
+/// que les résultats ne sont pas établis.
+async fn regler_voix(
+    pool: &PgPool,
+    req: &HttpRequest,
+    admin_id: Uuid,
+    id: Uuid,
+    votant: Uuid,
+    ecarter: bool,
+) -> Result<u64, ApiErreur> {
+    let concours = cycle::resoudre_concours(pool, id).await?;
+    if concours.etat != "actif" {
+        return Err(ApiErreur::Conflit("Les résultats sont établis : les voix sont figées".into()));
+    }
+    let touchees = if ecarter {
+        sqlx::query(
+            "UPDATE jeu.confrontation SET comptee = FALSE, motif_ecart = 'ecartee_admin'
+              WHERE concours_id = $1 AND votant_id = $2 AND choix_id IS NOT NULL AND comptee",
+        )
+    } else {
+        sqlx::query(
+            "UPDATE jeu.confrontation SET comptee = TRUE, motif_ecart = NULL
+              WHERE concours_id = $1 AND votant_id = $2 AND motif_ecart = 'ecartee_admin'",
+        )
+    }
+    .bind(id)
+    .bind(votant)
+    .execute(pool)
+    .await?
+    .rows_affected();
+    auditer(pool, req, admin_id, if ecarter { "VOIX_ECARTEES" } else { "VOIX_RETABLIES" }, "confrontation",
+        Some(id), None, Some(serde_json::json!({ "votant": votant, "voix": touchees }))).await;
+    Ok(touchees)
+}
+
+/// POST /api/admin/jeu/concours/{id}/votants/{uid}/ecarter
+pub async fn ecarter_votant(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<(Uuid, Uuid)>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "jeu", "gerer");
+    let (id, votant) = path.into_inner();
+    let n = regler_voix(pool.get_ref(), &req, admin.id, id, votant, true).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(serde_json::json!({ "voix_ecartees": n })), error: None }))
+}
+
+/// POST /api/admin/jeu/concours/{id}/votants/{uid}/retablir
+pub async fn retablir_votant(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<(Uuid, Uuid)>,
+) -> Result<HttpResponse, ApiErreur> {
+    verifier_permission!(admin, "jeu", "gerer");
+    let (id, votant) = path.into_inner();
+    let n = regler_voix(pool.get_ref(), &req, admin.id, id, votant, false).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(serde_json::json!({ "voix_retablies": n })), error: None }))
+}
