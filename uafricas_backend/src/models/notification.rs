@@ -80,6 +80,24 @@ pub mod engagement {
     pub const LIEN_ESPACE: &str = "/mon-compte/engagement";
 }
 
+// ── Types de notifications du jeu (feature 013-activites-ludiques) ───────────
+// Les distinctions et la réputation gagnées au jeu passent par les
+// notifications d'engagement ci-dessus (`BADGE_DEBLOQUE`) : rien à doubler ici.
+// Un duel DIRECT n'émet pas `DUEL_A_VOUS`, les deux joueurs sont devant l'écran.
+
+#[allow(dead_code)] // constantes émises au fil des paliers (duels, signalements)
+pub mod jeu {
+    pub const DUEL_PROPOSE: &str = "jeu.duel_propose";
+    pub const DUEL_ACCEPTE: &str = "jeu.duel_accepte";
+    pub const DUEL_REFUSE: &str = "jeu.duel_refuse";
+    pub const DUEL_A_VOUS: &str = "jeu.duel_a_vous";
+    pub const DUEL_TERMINE: &str = "jeu.duel_termine";
+    pub const SIGNALEMENT_TRAITE: &str = "jeu.signalement_traite";
+    pub const GAINS_ANNULES: &str = "jeu.gains_annules";
+    /// Espace du membre : score, historique, signalements.
+    pub const LIEN_ESPACE: &str = "/mon-compte/activites";
+}
+
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct NotificationRow {
     pub id: Uuid,

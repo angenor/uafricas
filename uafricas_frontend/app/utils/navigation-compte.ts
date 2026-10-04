@@ -22,6 +22,7 @@ export interface EntreeCompte {
 export const NAV_COMPTE: EntreeCompte[] = [
   { libelle: 'Mon profil', vers: '/mon-compte/profil', icone: 'fa-solid fa-user', dansLeMenu: true },
   { libelle: 'Mon engagement', vers: '/mon-compte/engagement', icone: 'fa-solid fa-medal', dansLeMenu: true },
+  { libelle: 'Mes activités', vers: '/mon-compte/activites', icone: 'fa-solid fa-gamepad', dansLeMenu: true },
   { libelle: 'Mes ami(e)s', vers: '/mon-compte/amis', icone: 'fa-solid fa-user-check', dansLeMenu: true },
   { libelle: 'Mes contributions', vers: '/mon-compte/contributions', icone: 'fa-solid fa-clipboard-list', dansLeMenu: true },
   { libelle: 'Mes supports médias', vers: '/mon-compte/mes-supports', icone: 'fa-solid fa-tv' },

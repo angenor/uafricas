@@ -368,7 +368,7 @@ onMounted(() => {
 
         <template v-else>
           <div class="rounded-[10px] border border-af-bordure bg-white p-4">
-            <RetrouveAmisCarteAfrique
+            <CommonCarteAfriqueValeurs
               :comptes="comptesParIso"
               :selected-iso="paysSelectionneIso"
               @select="onSelectPays"

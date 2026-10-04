@@ -11,6 +11,7 @@ export default defineNuxtPlugin(() => {
   const { gererEvenement: gererEvenementRdv } = useRendezVous()
   const { gererEvenementStream } = useEvenements()
   const { gererEvenement: gererEvenementAppel } = useAppels()
+  const { gererEvenement: gererEvenementDuel } = useDuels()
   const { compteurNonLues } = useNotifications()
 
   let source: EventSource | null = null
@@ -59,6 +60,12 @@ export default defineNuxtPlugin(() => {
         // Évènements d'appel direct : sonnerie entrante, acceptation, refus, annulation.
         else if (typeof evt?.type === 'string' && evt.type.startsWith('appel_')) {
           gererEvenementAppel(evt)
+        }
+        // Signaux des duels (feature 013) : ils disent de relire, sans porter
+        // l'état. AVANT le `else` final, qui n'a pas de cas par défaut : sans
+        // cette branche, ils seraient ignorés en silence.
+        else if (typeof evt?.type === 'string' && evt.type.startsWith('duel_')) {
+          gererEvenementDuel(evt)
         }
         else {
           gererEvenement(evt)

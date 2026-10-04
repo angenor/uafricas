@@ -5,6 +5,10 @@ pub mod contacts_media;
 pub mod engagement;
 pub mod livekit_moderation;
 pub mod image_validation;
+/// Moteur des activités ludiques (feature 013) : épreuve servable, série, partie, score.
+pub mod jeu;
+/// Dérivation d'épreuves candidates depuis le contenu publié (feature 013).
+pub mod jeu_derivation;
 pub mod matching;
 pub mod messagerie_sse;
 /// Prestataire de paiement : **unique point de bascule vers CinetPay** (SC-012).

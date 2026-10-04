@@ -44,6 +44,13 @@ const TYPES: Record<string, string> = {
   evenement_direct_demarre: 'Événements en direct',
   'engagement.niveau_atteint': 'Niveaux',
   'engagement.badge_debloque': 'Badges',
+  'jeu.duel_propose': 'Duels proposés',
+  'jeu.duel_accepte': 'Duels acceptés',
+  'jeu.duel_refuse': 'Duels refusés',
+  'jeu.duel_a_vous': 'Duels : à vous',
+  'jeu.duel_termine': 'Duels terminés',
+  'jeu.signalement_traite': 'Signalements d\'épreuve',
+  'jeu.gains_annules': 'Gains annulés',
 }
 
 const charger = async (reinitialiser = false) => {

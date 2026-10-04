@@ -66,6 +66,24 @@ export const couleurChaleurAvis = (compte: number): string =>
   PALIERS_CHALEUR.find(p => compte >= p.min)?.couleur ?? '#e5e7eb'
 
 /**
+ * Échelle des pays au Championship, par RANG et non par score : un score brut
+ * dépend du nombre de joueurs de la saison, un rang dit tout de suite qui mène.
+ * Même logique que `PALIERS_CHALEUR` : partagée par la carte et sa légende, et
+ * ordonnée pour que le PREMIER palier atteint l'emporte.
+ */
+export const PALIERS_RANG = [
+  { max: 3, couleur: '#7c2d12', libelle: 'Podium' },
+  { max: 10, couleur: '#A54A1C', libelle: 'Rangs 4 à 10' },
+  { max: 25, couleur: '#ea8a4f', libelle: 'Rangs 11 à 25' },
+  { max: Infinity, couleur: '#f6c7a4', libelle: 'Au-delà' }]
+
+export const COULEUR_SANS_JOUEUR = '#e5e7eb'
+
+/** Couleur d'un pays selon son rang ; `null` (aucun score) en gris. */
+export const couleurRangPays = (rang: number | null | undefined): string =>
+  rang == null ? COULEUR_SANS_JOUEUR : (PALIERS_RANG.find(p => rang <= p.max)?.couleur ?? COULEUR_SANS_JOUEUR)
+
+/**
  * Boîtes englobantes des sous-tracés d'un `d` SVG.
  *
  * Calcul APPROCHÉ : les points de contrôle des courbes sont pris pour des

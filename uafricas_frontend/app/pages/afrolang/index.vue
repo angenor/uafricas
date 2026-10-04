@@ -738,6 +738,9 @@ onMounted(async () => {
     <template #rail>
       <AfricansRecherche v-model="filtres.recherche" placeholder="Salle, langue…" />
 
+      <!-- Point d'entrée des activités ludiques du module (feature 013). -->
+      <JeuPanneauActivites module="afrolang" />
+
       <AfrolangSalleFiltresPanneau
         v-model="filtres"
         :langues="languesDisponibles"

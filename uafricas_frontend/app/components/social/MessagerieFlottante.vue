@@ -20,6 +20,9 @@ const { conversations, nonLusTotal, listerConversations, fermerConversation, dem
 const { nbAttenteMoi, compterAttenteMoi } = useRendezVous()
 // Appels directs : sonnerie entrante + salle visio (montés globalement, ci-dessous).
 const { appelEntrant, appelActif, accepterAppel, refuserAppel } = useAppels()
+// Invitation à un duel DIRECT (activités ludiques) : même canal, même point de
+// montage que l'appel entrant, puisque ce composant est présent sur toutes les pages.
+const { invitation: invitationDuel } = useDuels()
 const userStore = useUserStore()
 
 // La barre de lecture persistante occupe le bas de l'écran : sans ce décalage,
@@ -95,6 +98,9 @@ const retourListe = () => {
       @accepter="accepterAppel"
       @refuser="refuserAppel"
     />
+
+    <!-- Invitation à un duel en direct (activités ludiques) -->
+    <JeuInvitationDuelPrompt v-if="invitationDuel && !appelEntrant" :invitation="invitationDuel" />
 
     <!-- Salle visio d'un appel direct en cours (plein écran) -->
     <SocialAppelDirectSalle v-if="appelActif" :salle="appelActif" />

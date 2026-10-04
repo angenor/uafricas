@@ -21,6 +21,7 @@ pub mod fiche_pays;
 pub mod element_social;
 pub mod fiche_pays_social;
 pub mod gouvernance;
+pub mod jeu;
 pub mod livre;
 pub mod membre;
 pub mod messagerie;

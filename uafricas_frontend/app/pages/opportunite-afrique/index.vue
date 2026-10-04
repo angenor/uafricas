@@ -268,6 +268,9 @@ onMounted(async () => {
           </div>
         </dl>
       </AfricansPanneau>
+
+      <!-- Point d'entrée des activités ludiques du module (feature 013). -->
+      <JeuPanneauActivites module="afripulse" />
     </template>
 
     <OpportuniteAfriqueDecouverteModale v-model="presentationOuverte" />

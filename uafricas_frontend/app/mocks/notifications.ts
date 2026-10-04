@@ -20,6 +20,14 @@ export type TypeNotification =
   // visuelle, plutôt que de les laisser hériter de la cloche générique.
   | 'engagement.niveau_atteint'
   | 'engagement.badge_debloque'
+  // Activités ludiques (feature 013)
+  | 'jeu.duel_propose'
+  | 'jeu.duel_accepte'
+  | 'jeu.duel_refuse'
+  | 'jeu.duel_a_vous'
+  | 'jeu.duel_termine'
+  | 'jeu.signalement_traite'
+  | 'jeu.gains_annules'
 
 export interface Notification {
   id: string
@@ -67,6 +75,13 @@ export const iconeNotification = (type: TypeNotification): string => {
     evenement_direct_demarre: 'video',
     'engagement.niveau_atteint': 'medal',
     'engagement.badge_debloque': 'award',
+    'jeu.duel_propose': 'hand-fist',
+    'jeu.duel_accepte': 'hand-fist',
+    'jeu.duel_refuse': 'hand-fist',
+    'jeu.duel_a_vous': 'gamepad',
+    'jeu.duel_termine': 'trophy',
+    'jeu.signalement_traite': 'flag',
+    'jeu.gains_annules': 'circle-exclamation',
   }
   return icones[type] || 'bell'
 }
@@ -81,6 +96,13 @@ export const couleurNotification = (type: TypeNotification): string => {
     evenement_direct_demarre: 'text-red-600',
     'engagement.niveau_atteint': 'text-amber-600',
     'engagement.badge_debloque': 'text-[var(--color-custom-chocolat)]',
+    'jeu.duel_propose': 'text-[var(--color-custom-chocolat)]',
+    'jeu.duel_accepte': 'text-[var(--color-custom-green)]',
+    'jeu.duel_refuse': 'text-stone-500',
+    'jeu.duel_a_vous': 'text-[var(--color-custom-chocolat)]',
+    'jeu.duel_termine': 'text-amber-600',
+    'jeu.signalement_traite': 'text-stone-500',
+    'jeu.gains_annules': 'text-red-600',
   }
   return couleurs[type] || 'text-stone-500'
 }

@@ -62,5 +62,8 @@ export const NAV_AFRICANS: EntreeNav[] = [
   universe('mindshiftlab', 'fa-solid fa-shield-halved'),
   universe('africantives', 'fa-solid fa-arrows-rotate'),
   universe('africamood', 'fa-solid fa-photo-film'),
+  // Les activités ludiques (feature 013) sont transversales aux univers : elles
+  // n'appartiennent à aucun d'eux, d'où une entrée plate et non une application.
+  { libelle: 'Activités', icone: 'fa-solid fa-gamepad', vers: '/activites' },
   { libelle: 'Communauté', icone: 'fa-solid fa-user', vers: '/profil', aValider: true },
   { libelle: 'Application African', icone: 'fa-solid fa-star', vers: '/decouvrir' }]
