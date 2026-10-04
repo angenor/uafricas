@@ -170,6 +170,9 @@ onMounted(async () => {
         </div>
       </section>
 
+      <!-- Concours ouverts (feature 014) : absent s'il n'y en a aucun -->
+      <JeuConcoursEnCours />
+
       <!-- Duels entre amis -->
       <section class="flex flex-wrap items-center gap-4 rounded-[10px] border border-af-bordure bg-af-surface p-5">
         <span class="grid size-11 shrink-0 place-items-center rounded-full bg-af-chocolat/10 text-af-chocolat">

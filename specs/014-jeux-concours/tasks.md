@@ -45,6 +45,38 @@ US3 terminée (T031 à T039) : 10 formes typées produisent 338 candidates en lo
 - **Trois formes de plus que le plan** (T034 à T037 n'en prévoyaient aucune hors Afripulse) : `paires_proverbes`, `paires_citations` (Codimoi) et `paires_idees_recues` (FactCheck, idée reçue ↔ réalité). Sans elles, Codimoi et FactCheck n'auraient eu aucune épreuve typée. Ils restent sous les 30 de SC-005 en local, faute de volume (12 proverbes, 8 idées reçues), comme Afrolang, qui ne s'enrichit que par la saisie.
 - Contrôles : 0 paire de monnaies en double, 0 peuple partagé en carte, 243 paires d'éléments consécutifs toutes à plus de 15 % d'écart dans le bon sens ; 8 solutions sur 191 égales à l'identité, soit le hasard attendu (1 chance sur 24).
 
+US6 terminée (T040 à T048). Programmation et modération vérifiées par l'API et dans le navigateur. Écarts :
+- La liste des concours résout CHAQUE concours (PC1) et filtre la phase en Rust : la phase n'est pas une colonne, elle ne se filtre pas en SQL. Volumes attendus : quelques dizaines de concours.
+- Les modules de rattachement viennent de `utils/modulesPlateforme.ts` (les 20 modules du document client), pas de `navigation-africans.ts`, qui ne nomme pas les modules par un code.
+- « Retirer du concours » une photo publiée est un REJET avec motif (`publiee → rejetee`), comme le permet le contrat : le membre sait pourquoi.
+- Recette : annulation automatique sous le seuil à la première lecture, une seule prime de participation après trois lectures (PC5) ; titre gelé et thème modifiable une fois l'appel ouvert ; suppression refusée d'un concours ouvert ; motif de rejet obligatoire.
+
+US4 terminée (T049 à T055), avec T073 en avance. Dépôt, remplacement, retrait, galerie anonyme, hub, panneau de module et « Mes activités » vérifiés à 375 et 1280 px. Écarts :
+- **Défaut trouvé à la recette** : la page d'un concours relisait le bloc `moi` au montage seulement si le jeton était déjà là. Or après un rechargement, le jeton d'accès (en mémoire) est restauré APRÈS le montage, et le `refresh()` de `useAsyncData` est ignoré pendant l'hydratation : un membre connecté se voyait invité à se connecter. La page relit désormais le concours elle-même dès que le jeton apparaît.
+- « Remplacer » n'est proposé sur une photo refusée que s'il reste de la place : la remettre en attente la rend active, et le serveur refuserait au-delà du plafond.
+- Les concours à venir ne sont pas listés publiquement, et leur page répond 404 : on n'annonce pas un appel qui n'est pas ouvert.
+- Le panneau d'activités affiche les concours du module, mais il n'est monté que sur les quatre modules jouables. Un concours rattaché à Afroculture est visible sur l'espace Activités, pas encore sur la page d'Afroculture (aucun panneau n'y est monté).
+- T073 est livrée avec la page : `jeu/ReglesVote.vue` affiche les règles d'admissibilité des voix sur tout concours en appel ou en vote.
+
+US5 terminée (T056 à T060). Vérifié par l'API (huit votants, 48 votes) et dans le navigateur à 375 px : même paire au rechargement ; 10 paires sur 10 possibles pour un participant, sa photo jamais présentée ; zéro auto-vote ; voix trop rapide et voix d'un compte récent enregistrées mais écartées, sans que la réponse le dise ; présentations de 18 à 19 par photo (écart 1, pour 2 visés) ; aucun champ d'auteur, de décompte ou d'admissibilité dans les réponses ; 15 votes en 16 s, dont 1 s d'attente par vote imposée par le test. Écarts :
+- Pour la recette, des jetons d'accès sont fabriqués avec le secret LOCAL du backend (`jwtlocal.py` dans le répertoire de travail, hors dépôt), afin de voter avec les comptes de démonstration sans toucher à leurs mots de passe.
+- Le tirage de B réutilise la condition « paire jamais vue » écrite pour A, en renommant les alias plutôt qu'en la dupliquant.
+
+US7 terminée (T061 à T065) : premier concours complet de bout en bout. Vérifié :
+- résultats établis à la première lecture en 72 ms (SC-011) ;
+- après 1 000 relectures, 6 primes de participation versées une fois, aucune clé en double (SC-012) ;
+- gains d'origine `concours`, rattachés à la saison et au pays ;
+- ex aequo forcés (50 % et 50 %) au même rang, avec la même prime ;
+- distinction `jeu_laureat` au premier ;
+- notifications « podium » et « résultats » ;
+- aucun point d'engagement, statut inchangé (SC-013), seule la réputation bouge.
+
+Écarts :
+- `classement()` est l'unique calcul du classement : les résultats l'appellent, le jury (T066) et le suivi (T069) l'appelleront.
+- Sur « Tenue traditionnelle », aucune photo n'a atteint les 10 duels comptés (les votes de démonstration, trop rapides, ont été écartés) : pas de podium, classement entièrement « hors seuil ». C'est la règle FR-043 qui s'applique, pas un défaut ; un seuil adapté au volume attendu se règle par concours.
+- **Défaut trouvé à la recette** : le podium plaçait ses cartes d'après le RANG, si bien que deux 2ᵉ ex aequo délogeaient le 1er du centre. L'ordre suit désormais la position dans le podium, la hauteur de marche le rang.
+- La première comparaison SC-013 a échoué à tort : elle incluait les comptes d'engagement CRÉÉS au versement de la réputation (0 point, statut « membre », soit l'état implicite d'un membre sans compte).
+
 **Les cinq points de conception de [plan.md](./plan.md)**, rappelés dans les tâches qu'ils concernent (repère ⚠️ PCn) :
 - **PC1** : `resoudre_concours` est appelée par toute route qui lit un concours.
 - **PC2** : toutes les requêtes qui remplissent `EpreuveRow` lisent les nouvelles colonnes.
@@ -232,30 +264,30 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
 
 **Independent Test** : [quickstart.md, scénario 4](./quickstart.md), points 1, 3, 5 et 7.
 
-- [ ] T040 [P] [US6] Créer `uafricas_backend/src/models/jeu_concours.rs` : `ConcoursRow`, `ParticipationRow`, `ConfrontationRow`, `ResultatRow`, l'enum `Phase` (`a_venir`, `appel`, `vote`, `deliberation`, `resultats`, `annule`) avec `fn phase(c, maintenant) -> Phase` (data-model §5), et les DTO publics de [api-membre.md §2](./contracts/api-membre.md). La galerie a deux formes : **sans auteur** pendant appel et vote, **avec** auteur après. Déclarer le module dans `uafricas_backend/src/models/mod.rs`.
-- [ ] T041 [P] [US6] Créer `uafricas_backend/src/models/admin/jeu_concours.rs` : requêtes de création et de modification, file de modération, suivi. Déclarer dans `models/admin/mod.rs`.
-- [ ] T042 [US6] Créer `uafricas_backend/src/services/jeu_concours.rs` avec `resoudre_concours(pool, id) -> Result<ConcoursRow, ApiErreur>` (research D6) :
+- [X] T040 [P] [US6] Créer `uafricas_backend/src/models/jeu_concours.rs` : `ConcoursRow`, `ParticipationRow`, `ConfrontationRow`, `ResultatRow`, l'enum `Phase` (`a_venir`, `appel`, `vote`, `deliberation`, `resultats`, `annule`) avec `fn phase(c, maintenant) -> Phase` (data-model §5), et les DTO publics de [api-membre.md §2](./contracts/api-membre.md). La galerie a deux formes : **sans auteur** pendant appel et vote, **avec** auteur après. Déclarer le module dans `uafricas_backend/src/models/mod.rs`.
+- [X] T041 [P] [US6] Créer `uafricas_backend/src/models/admin/jeu_concours.rs` : requêtes de création et de modification, file de modération, suivi. Déclarer dans `models/admin/mod.rs`.
+- [X] T042 [US6] Créer `uafricas_backend/src/services/jeu_concours.rs` avec `resoudre_concours(pool, id) -> Result<ConcoursRow, ApiErreur>` (research D6) :
   - lecture ; si la phase calculée exige une transition **écrite** (annulation au seuil du vote, ou résultats), transaction avec `SELECT … FOR UPDATE`, puis revérification de `etat = 'actif'` ;
   - annulation : `etat = 'annule'`, motif « participations insuffisantes » ; puis, **après le COMMIT**, notifications `jeu.concours_annule` et primes de participation des publiées.
 
   ⚠️ **PC5** : la clé est `concours:{id}:participation:{pid}`, la même que celle des résultats.
 
   Laisser un appel `etablir_resultats` vide (`todo` explicite remplacé en T061). Déclarer dans `services/mod.rs`.
-- [ ] T043 [US6] Créer `uafricas_backend/src/handlers/admin/jeu_concours.rs` ([api-admin.md §2 et §3](./contracts/api-admin.md)), sous `verifier_permission!(…, "jeu.gerer")`, chaque mutation avec `audit::log_action` :
+- [X] T043 [US6] Créer `uafricas_backend/src/handlers/admin/jeu_concours.rs` ([api-admin.md §2 et §3](./contracts/api-admin.md)), sous `verifier_permission!(…, "jeu.gerer")`, chaque mutation avec `audit::log_action` :
   - `lister_concours`, `creer_concours` (règles de dates FR-022), `modifier_concours` (FR-024 : champs permis selon la phase, 409 qui nomme le champ), `supprimer_concours` (phase `a_venir`), `annuler_concours` (avec motif, primes PC5) ;
   - `lister_participations` (file transversale), `accepter`, `rejeter` (motif obligatoire), `moderation_groupee`, `retablir`, `signalements_participation` ;
   - notifications `jeu.participation_acceptee` et `jeu.participation_rejetee`.
 
   ⚠️ **PC1** : `lister_concours` et toute lecture d'un concours passent par `resoudre_concours`.
-- [ ] T044 [US6] Déclarer les routes admin dans `uafricas_backend/src/routes.rs`. **Littéraux d'abord** : `/jeu/concours/participations…` avant `/jeu/concours/{id}…`.
-- [ ] T045 [P] [US6] Créer `uafricas_frontend/app/composables/useAdminConcours.ts` sur `useAdmin` (`adminFetch`, `listerPagine`) : concours, modération, suivi, jury.
-- [ ] T046 [P] [US6] Créer `uafricas_frontend/app/components/admin/jeu/ConcoursFormulaire.vue` (daisyUI) :
+- [X] T044 [US6] Déclarer les routes admin dans `uafricas_backend/src/routes.rs`. **Littéraux d'abord** : `/jeu/concours/participations…` avant `/jeu/concours/{id}…`.
+- [X] T045 [P] [US6] Créer `uafricas_frontend/app/composables/useAdminConcours.ts` sur `useAdmin` (`adminFetch`, `listerPagine`) : concours, modération, suivi, jury.
+- [X] T046 [P] [US6] Créer `uafricas_frontend/app/components/admin/jeu/ConcoursFormulaire.vue` (daisyUI) :
   - titre, thème, règlement, rattachement (liste des codes de modules de `navigation-africans.ts`), visuel ;
   - les trois dates, avec un contrôle de cohérence immédiat ;
   - réglages (participations par membre, minimum, plafond de votes, seuil de présentations, jury, finalistes, délai) et primes facultatives ;
   - les champs non modifiables après l'ouverture sont désactivés, avec la raison.
-- [ ] T047 [US6] Créer `uafricas_frontend/app/pages/admin/activites/concours/index.vue` (liste par phase, création) `uafricas_frontend/app/pages/admin/activites/concours/[id].vue` (fiche du concours : réglages, phase, onglet « Participations » de ce concours ; les onglets « Jury » et « Suivi du vote » viennent en T067 et T072) et `uafricas_frontend/app/pages/admin/activites/participations.vue` (file de modération transversale : photo en grand, accepter, rejeter avec motif, sélection multiple). Ajouter « Concours » et « Participations » dans la section Activités de `uafricas_frontend/app/components/admin/AdminSidebar.vue`, et les titres dans `uafricas_frontend/app/layouts/admin.vue`.
-- [ ] T048 [US6] Ajouter les 6 types `jeu.participation_*` et `jeu.concours_*` dans `uafricas_frontend/app/mocks/notifications.ts` et `uafricas_frontend/app/pages/notifications.vue` (libellé, icône, lien vers `/activites/concours/{id}`).
+- [X] T047 [US6] Créer `uafricas_frontend/app/pages/admin/activites/concours/index.vue` (liste par phase, création) `uafricas_frontend/app/pages/admin/activites/concours/[id].vue` (fiche du concours : réglages, phase, onglet « Participations » de ce concours ; les onglets « Jury » et « Suivi du vote » viennent en T067 et T072) et `uafricas_frontend/app/pages/admin/activites/participations.vue` (file de modération transversale : photo en grand, accepter, rejeter avec motif, sélection multiple). Ajouter « Concours » et « Participations » dans la section Activités de `uafricas_frontend/app/components/admin/AdminSidebar.vue`, et les titres dans `uafricas_frontend/app/layouts/admin.vue`.
+- [X] T048 [US6] Ajouter les 6 types `jeu.participation_*` et `jeu.concours_*` dans `uafricas_frontend/app/mocks/notifications.ts` et `uafricas_frontend/app/pages/notifications.vue` (libellé, icône, lien vers `/activites/concours/{id}`).
 
 **Checkpoint** : un concours se programme et se modère ; les phases avancent seules.
 
@@ -267,7 +299,7 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
 
 **Independent Test** : [quickstart.md, scénario 4](./quickstart.md), points 2, 4 et 6.
 
-- [ ] T049 [US4] Créer `uafricas_backend/src/handlers/jeu_concours.rs`, partie lecture et dépôt ([api-membre.md §2 et §3](./contracts/api-membre.md)) :
+- [X] T049 [US4] Créer `uafricas_backend/src/handlers/jeu_concours.rs`, partie lecture et dépôt ([api-membre.md §2 et §3](./contracts/api-membre.md)) :
   - `lister_concours` (public, filtres `phase` et `rattachement`) ;
   - `obtenir_concours` (jeton facultatif, bloc `moi`) ;
   - `galerie` (ordre **aléatoire** et sans auteur pendant appel et vote, classée avec auteurs après les résultats) ;
@@ -275,12 +307,12 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
   - `remplacer`, `retirer`, `mes_participations`.
 
   ⚠️ **PC1** : chaque handler commence par `resoudre_concours`, liste comprise (une résolution par concours listé).
-- [ ] T050 [US4] Déclarer les routes membre et publiques dans `uafricas_backend/src/routes.rs` : `/concours/mes-participations` **avant** `/concours/{id}`.
-- [ ] T051 [P] [US4] Créer `uafricas_frontend/app/composables/useConcours.ts` (types de [api-membre.md](./contracts/api-membre.md), `appelAuth` pour les routes membre, `$fetch` pour le public).
-- [ ] T052 [P] [US4] Créer `uafricas_frontend/app/components/jeu/CarteConcours.vue` (visuel, titre, phase en clair avec compte à rebours jusqu'à la prochaine échéance, appel à l'action selon la phase) `uafricas_frontend/app/components/jeu/GalerieConcours.vue` (grille de photos ; mode anonyme en ordre aléatoire pendant appel et vote, mode classé en T063) et `uafricas_frontend/app/components/jeu/DeposerParticipation.vue` (choix et aperçu de la photo, légende de 200 signes avec compteur, rappel de la modération préalable, messages d'erreur du serveur affichés tels quels).
-- [ ] T053 [US4] Créer `uafricas_frontend/app/pages/activites/concours/index.vue` (concours en cours, puis terminés) et `uafricas_frontend/app/pages/activites/concours/[id].vue` (vue par phase : à venir, appel = règlement + dépôt + « ma participation » et son état ou son motif de rejet, vote et résultats en T059 et T063), sur le gabarit `africans` (`layout: false` + `NuxtLayout`), en Tailwind pur, avec un SSR et un Open Graph pour le partage de la galerie.
-- [ ] T054 [US4] Ajouter le bloc « Concours en cours » dans `uafricas_frontend/app/pages/activites/index.vue`, et le concours rattaché au module dans `uafricas_frontend/app/components/jeu/PanneauActivites.vue` (`GET /concours?rattachement=<code>&phase=en_cours`). Ajouter « Mes participations » dans `uafricas_frontend/app/pages/mon-compte/activites.vue`.
-- [ ] T055 [US4] Dérouler [quickstart.md, scénario 4](./quickstart.md) en entier, dont l'annulation automatique d'un concours sous le seuil (PC5 : une seule prime après dix relectures).
+- [X] T050 [US4] Déclarer les routes membre et publiques dans `uafricas_backend/src/routes.rs` : `/concours/mes-participations` **avant** `/concours/{id}`.
+- [X] T051 [P] [US4] Créer `uafricas_frontend/app/composables/useConcours.ts` (types de [api-membre.md](./contracts/api-membre.md), `appelAuth` pour les routes membre, `$fetch` pour le public).
+- [X] T052 [P] [US4] Créer `uafricas_frontend/app/components/jeu/CarteConcours.vue` (visuel, titre, phase en clair avec compte à rebours jusqu'à la prochaine échéance, appel à l'action selon la phase) `uafricas_frontend/app/components/jeu/GalerieConcours.vue` (grille de photos ; mode anonyme en ordre aléatoire pendant appel et vote, mode classé en T063) et `uafricas_frontend/app/components/jeu/DeposerParticipation.vue` (choix et aperçu de la photo, légende de 200 signes avec compteur, rappel de la modération préalable, messages d'erreur du serveur affichés tels quels).
+- [X] T053 [US4] Créer `uafricas_frontend/app/pages/activites/concours/index.vue` (concours en cours, puis terminés) et `uafricas_frontend/app/pages/activites/concours/[id].vue` (vue par phase : à venir, appel = règlement + dépôt + « ma participation » et son état ou son motif de rejet, vote et résultats en T059 et T063), sur le gabarit `africans` (`layout: false` + `NuxtLayout`), en Tailwind pur, avec un SSR et un Open Graph pour le partage de la galerie.
+- [X] T054 [US4] Ajouter le bloc « Concours en cours » dans `uafricas_frontend/app/pages/activites/index.vue`, et le concours rattaché au module dans `uafricas_frontend/app/components/jeu/PanneauActivites.vue` (`GET /concours?rattachement=<code>&phase=en_cours`). Ajouter « Mes participations » dans `uafricas_frontend/app/pages/mon-compte/activites.vue`.
+- [X] T055 [US4] Dérouler [quickstart.md, scénario 4](./quickstart.md) en entier, dont l'annulation automatique d'un concours sous le seuil (PC5 : une seule prime après dix relectures).
 
 **Checkpoint** : on dépose et on modère ; le concours s'arrête à l'appel (attendu, voir le palier 5).
 
@@ -292,7 +324,7 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
 
 **Independent Test** : [quickstart.md, scénario 5](./quickstart.md).
 
-- [ ] T056 [US5] Dans `uafricas_backend/src/services/jeu_concours.rs`, écrire `tirer_confrontation(conn, concours, votant)` (research D7), en transaction :
+- [X] T056 [US5] Dans `uafricas_backend/src/services/jeu_concours.rs`, écrire `tirer_confrontation(conn, concours, votant)` (research D7), en transaction :
   1. rendre la confrontation ouverte s'il y en a une ;
   2. sinon, appliquer le plafond `votes_max` ;
   3. choisir A, la moins présentée (`ORDER BY nombre_presentations, random()`), parmi les publiées qui ne sont pas au votant et qui ont un partenaire non encore vu par lui ;
@@ -302,15 +334,15 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
   7. si aucune paire n'est possible, `Termine { raison }`.
 
   Le conflit sur l'index partiel (deux onglets) se résout en relisant la confrontation ouverte.
-- [ ] T057 [US5] Dans `uafricas_backend/src/services/jeu_concours.rs`, écrire `voter(conn, confrontation, votant, cote)` :
+- [X] T057 [US5] Dans `uafricas_backend/src/services/jeu_concours.rs`, écrire `voter(conn, confrontation, votant, cote)` :
   - idempotent si déjà votée ;
   - refus si la confrontation n'est pas au votant, ou si le votant est l'auteur d'un des côtés (défense en profondeur) ;
   - `choix_id` et `vote_at = NOW()` ;
   - `comptee` et `motif_ecart` selon research D9 : `trop_rapide` à moins de 1 000 ms de `presentee_at`, `compte_recent` si `created_at > vote_debut`, `non_verifie` si `email_verifie = false`.
 
   Puis enchaîner `tirer_confrontation`.
-- [ ] T058 [US5] Ajouter les handlers `confrontation_courante` et `voter` à `uafricas_backend/src/handlers/jeu_concours.rs` (`garde_joueur`, phase `vote` sinon 409, PC1), avec les routes. La réponse ne contient **jamais** d'auteur, de décompte, ni `comptee` (FR-039).
-- [ ] T059 [P] [US5] Créer `uafricas_frontend/app/components/jeu/Confrontation.vue` :
+- [X] T058 [US5] Ajouter les handlers `confrontation_courante` et `voter` à `uafricas_backend/src/handlers/jeu_concours.rs` (`garde_joueur`, phase `vote` sinon 409, PC1), avec les routes. La réponse ne contient **jamais** d'auteur, de décompte, ni `comptee` (FR-039).
+- [X] T059 [P] [US5] Créer `uafricas_frontend/app/components/jeu/Confrontation.vue` :
   - deux photos côte à côte (empilées sous 640 px), légende ;
   - choix par clic, par toucher, ou par les touches ← et → ;
   - transition immédiate vers la paire suivante renvoyée par le vote ;
@@ -318,7 +350,7 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
   - écran de fin « vous avez tout vu » ou « plafond atteint ».
 
   Intégrer dans `uafricas_frontend/app/pages/activites/concours/[id].vue` (phase vote), avec la galerie anonyme en ordre aléatoire.
-- [ ] T060 [US5] Dérouler [quickstart.md, scénario 5](./quickstart.md), dont l'équilibre des présentations (écart ≤ 2 après 40 votes) et la vérification **réseau** de l'absence d'auteur et de décompte.
+- [X] T060 [US5] Dérouler [quickstart.md, scénario 5](./quickstart.md), dont l'équilibre des présentations (écart ≤ 2 après 40 votes) et la vérification **réseau** de l'absence d'auteur et de décompte.
 
 **Checkpoint** : on vote ; aucun résultat n'est encore publié.
 
@@ -330,20 +362,20 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
 
 **Independent Test** : [quickstart.md, scénario 6](./quickstart.md).
 
-- [ ] T061 [US7] Écrire `etablir_resultats(conn, concours)` dans `uafricas_backend/src/services/jeu_concours.rs` (research D8), appelée par `resoudre_concours` (remplace l'appel vide de T042) :
+- [X] T061 [US7] Écrire `etablir_resultats(conn, concours)` dans `uafricas_backend/src/services/jeu_concours.rs` (research D8), appelée par `resoudre_concours` (remplace l'appel vide de T042) :
   - une seule requête d'agrégation sur les confrontations **comptées** et votées, sans celles qui impliquent une participation retirée ou suspendue, ni celles dont le votant est suspendu ;
   - calcul de `taux` et de `sous_seuil` (< `presentations_min`) ;
   - tri ; ex aequo à 0,1 point près (même rang) ; podium du jury s'il existe (`place_jury`, en tête) ;
   - insertion dans `jeu.resultat_concours`, `etat = 'resultats'`, `resultats_at` ;
   - **dans la même transaction**, `crediter` (origine `concours`) : prime de participation pour chaque publiée (clé PC5), prime de podium selon le rang (`prime_podium` du concours ou des règles ; les ex aequo touchent la prime de leur rang).
-- [ ] T062 [US7] Après le COMMIT, dans `uafricas_backend/src/services/jeu_concours.rs` :
+- [X] T062 [US7] Après le COMMIT, dans `uafricas_backend/src/services/jeu_concours.rs` :
   - `engagement::attribuer` pour `jeu_concours_participation`, `jeu_concours_podium` et `jeu_concours_vote` (votants avec au moins 10 voix comptées), avec les clés de data-model §10 ;
   - notifications `jeu.concours_resultats` (participants) et `jeu.concours_laureat` (podium).
 
   Ajouter les 3 codes à `ACTIONS_INSTRUMENTEES` dans `uafricas_backend/src/handlers/admin/engagement.rs`.
-- [ ] T063 [P] [US7] Créer `uafricas_frontend/app/components/jeu/PodiumConcours.vue` (trois premières places, auteur, taux de victoire en %, distinction) et passer `uafricas_frontend/app/components/jeu/GalerieConcours.vue` en mode classé (rang, taux, duels, « hors classement » pour les participations sous le seuil). Brancher sur la phase `resultats` de `uafricas_frontend/app/pages/activites/concours/[id].vue`.
-- [ ] T064 [US7] Dans `uafricas_frontend/app/pages/mon-compte/activites.vue`, afficher pour chaque participation le rang, le taux et la récompense une fois les résultats établis.
-- [ ] T065 [US7] Dérouler [quickstart.md, scénario 6](./quickstart.md) :
+- [X] T063 [P] [US7] Créer `uafricas_frontend/app/components/jeu/PodiumConcours.vue` (trois premières places, auteur, taux de victoire en %, distinction) et passer `uafricas_frontend/app/components/jeu/GalerieConcours.vue` en mode classé (rang, taux, duels, « hors classement » pour les participations sous le seuil). Brancher sur la phase `resultats` de `uafricas_frontend/app/pages/activites/concours/[id].vue`.
+- [X] T064 [US7] Dans `uafricas_frontend/app/pages/mon-compte/activites.vue`, afficher pour chaque participation le rang, le taux et la récompense une fois les résultats établis.
+- [X] T065 [US7] Dérouler [quickstart.md, scénario 6](./quickstart.md) :
   - 1 000 relectures, un seul versement ;
   - **comparaison de `engagement.compte` avant et après (SC-013)** ;
   - ex aequo forcés en SQL.
@@ -383,7 +415,7 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
   `retablir` (T043) remet `nombre_signalements` à 0.
 - [ ] T071 [P] [US9] Créer `uafricas_frontend/app/components/jeu/SignalerParticipation.vue` (motif, confirmation, Tailwind pur) et le monter sur la galerie et la confrontation.
 - [ ] T072 [P] [US9] Ajouter les onglets « Suivi du vote » (chiffres, comptes signalés, écarter ou rétablir les voix) et « Participations » (avec signalements) à `uafricas_frontend/app/pages/admin/activites/concours/[id].vue`.
-- [ ] T073 [US9] Rendre visible dans le règlement public de chaque concours (`uafricas_frontend/app/pages/activites/concours/[id].vue`) les règles d'admissibilité des voix (FR-040), en texte fixe ajouté au règlement saisi.
+- [X] T073 [US9] Rendre visible dans le règlement public de chaque concours (`uafricas_frontend/app/pages/activites/concours/[id].vue`) les règles d'admissibilité des voix (FR-040), en texte fixe ajouté au règlement saisi.
 - [ ] T074 [US9] Dérouler [quickstart.md, scénario 8](./quickstart.md).
 
 ---

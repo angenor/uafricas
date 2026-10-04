@@ -138,6 +138,8 @@ const sidebarSections: SidebarSection[] = [
     children: [
       { label: 'Épreuves', faIcon: 'circle-question', route: '/admin/activites/epreuves' },
       { label: 'Revue', faIcon: 'list-check', route: '/admin/activites/revue' },
+      { label: 'Concours', faIcon: 'images', route: '/admin/activites/concours' },
+      { label: 'Participations', faIcon: 'image', route: '/admin/activites/participations' },
       { label: 'Défis', faIcon: 'calendar-days', route: '/admin/activites/defis' },
       { label: 'Saisons', faIcon: 'trophy', route: '/admin/activites/saisons' },
       { label: 'Joueurs', faIcon: 'users', route: '/admin/activites/joueurs' },

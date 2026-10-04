@@ -124,6 +124,9 @@ watch(page, () => {
           </AfricansBouton>
         </div>
 
+        <!-- Concours (feature 014) : absent si le membre n'a rien déposé -->
+        <JeuMesParticipationsConcours />
+
         <!-- Distinctions du jeu -->
         <section
           v-if="distinctions.obtenues.length || distinctions.aDebloquer.length"
