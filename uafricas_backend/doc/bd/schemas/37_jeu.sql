@@ -426,13 +426,32 @@ INSERT INTO jeu.regles (id) VALUES (TRUE) ON CONFLICT (id) DO NOTHING;
 --
 -- Ajouter un module au jeu = ajouter une branche ici.
 
+-- Changer ce qu'une empreinte couvre (nouvelle forme de question sur un champ
+-- jusque-là ignoré) changerait l'empreinte de TOUTES les sources du type, et
+-- rendrait leurs épreuves non servables d'un coup. On relève donc les
+-- empreintes avant de remplacer la vue, et on réaligne après les épreuves dont
+-- la source n'avait PAS bougé. Sans objet sur une base neuve ; sans effet au
+-- rejeu (ancienne et nouvelle empreintes sont alors égales).
+-- (Table temporaire sans ON COMMIT DROP : hors transaction explicite, chaque
+-- instruction est validée seule et la table disparaîtrait aussitôt.)
+DROP TABLE IF EXISTS pg_temp._empreinte_avant;
+CREATE TEMP TABLE _empreinte_avant (type_source varchar(30), source_id uuid, empreinte varchar(32));
+DO $$
+BEGIN
+    IF to_regclass('jeu.v_source') IS NOT NULL THEN
+        INSERT INTO _empreinte_avant SELECT type_source, source_id, empreinte FROM jeu.v_source;
+    END IF;
+END $$;
+
 CREATE OR REPLACE VIEW jeu.v_source AS
     SELECT 'fiche_pays'::varchar(30)  AS type_source,
            fp.id                      AS source_id,
            (fp.bloquee = FALSE)       AS visible,
            md5(concat_ws('|', COALESCE(p.nom, ''), COALESCE(p.capitale, ''),
                               COALESCE(fp.monnaie, ''), COALESCE(fp.image_drapeau_url, ''),
-                              COALESCE(fp.image_devise_url, '')))::varchar(32) AS empreinte,
+                              COALESCE(fp.image_devise_url, ''), COALESCE(p.indicatif_tel, ''),
+                              COALESCE(fp.population::text, ''), COALESCE(fp.superficie_km2::text, ''),
+                              COALESCE(fp.langue_officielle, '')))::varchar(32) AS empreinte,
            fp.pays_id                 AS pays_id
       FROM country_profile.fiche_pays fp
       JOIN shared.pays p ON p.id = fp.pays_id
@@ -458,10 +477,19 @@ CREATE OR REPLACE VIEW jeu.v_source AS
       FROM country_profile.personnalite_connue pc
       JOIN country_profile.fiche_pays fp ON fp.id = pc.fiche_pays_id
     UNION ALL
+    -- Le groupe ethnique n'a ni suppression douce ni suspension : il suit sa fiche.
+    SELECT 'groupe_ethnique', ge.id,
+           (fp.bloquee = FALSE),
+           md5(concat_ws('|', COALESCE(ge.nom, ''), ge.fiche_pays_id::text))::varchar(32),
+           fp.pays_id
+      FROM country_profile.groupe_ethnique ge
+      JOIN country_profile.fiche_pays fp ON fp.id = ge.fiche_pays_id
+    UNION ALL
     SELECT 'codimoi', c.id,
            (c.etat = 'publie' AND c.deleted_at IS NULL),
            md5(concat_ws('|', c.type::text, COALESCE(c.contenu, ''),
-                              COALESCE(c.pays_id::text, ''), COALESCE(c.nom_auteur_originel, '')))::varchar(32),
+                              COALESCE(c.pays_id::text, ''), COALESCE(c.nom_auteur_originel, ''),
+                              COALESCE(c.explication, '')))::varchar(32),
            c.pays_id
       FROM culture.codimoi c
     UNION ALL
@@ -471,6 +499,33 @@ CREATE OR REPLACE VIEW jeu.v_source AS
                               COALESCE(f.realite_description, '')))::varchar(32),
            f.pays_id
       FROM governance.factcheck f;
+
+UPDATE jeu.epreuve e
+   SET source_empreinte = n.empreinte
+  FROM _empreinte_avant a
+  JOIN jeu.v_source n USING (type_source, source_id)
+ WHERE e.origine = 'derivee'
+   AND e.type_source = a.type_source AND e.source_id = a.source_id
+   AND e.source_empreinte = a.empreinte
+   AND e.source_empreinte <> n.empreinte;
+
+DROP TABLE _empreinte_avant;
+
+-- Mise en forme des grandeurs dans les explications des questions de
+-- comparaison (« 30,3 millions d'habitants », « 587 041 km² »).
+CREATE OR REPLACE FUNCTION jeu.fmt_habitants(n bigint) RETURNS text
+LANGUAGE sql IMMUTABLE AS $$
+    SELECT CASE
+        WHEN n >= 2000000 THEN replace(round(n / 1000000.0, 1)::text, '.', ',') || ' millions d''habitants'
+        WHEN n >= 1000000 THEN replace(round(n / 1000000.0, 1)::text, '.', ',') || ' million d''habitants'
+        ELSE replace(to_char(n, 'FM999G999'), ',', ' ') || ' habitants'
+    END
+$$;
+
+CREATE OR REPLACE FUNCTION jeu.fmt_km2(n numeric) RETURNS text
+LANGUAGE sql IMMUTABLE AS $$
+    SELECT replace(to_char(round(n), 'FM999G999G999'), ',', ' ') || ' km²'
+$$;
 
 
 -- ════════════════════════════════════════════════════════════════════════════

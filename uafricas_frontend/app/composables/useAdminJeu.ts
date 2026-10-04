@@ -3,6 +3,7 @@
  * Routes : `/api/admin/jeu/*`, toutes gardées par la permission `jeu.gerer`.
  */
 import type { ApiResponse } from '~/types/admin'
+import type { TypeReponse } from '~/composables/useJeu'
 
 export type EtatEpreuve = 'candidate' | 'jouable' | 'a_revoir' | 'rejetee' | 'retiree'
 export type SourceEtat = 'aucune' | 'conforme' | 'modifiee' | 'indisponible'
@@ -14,8 +15,18 @@ export interface EpreuveAdminAPI {
   media_type: 'image' | 'audio' | null
   media_url: string | null
   propositions: string[]
-  /** Rang de la bonne proposition, à partir de 1. */
-  bonne_reponse: number
+  /** Choix multiple : rang de la bonne proposition, à partir de 1. */
+  bonne_reponse: number | null
+  /** Feature 014 : `choix`, `carte`, `ordre` ou `paires`. */
+  type_reponse: TypeReponse
+  /** Carte : le pays attendu. */
+  reponse_pays_id: string | null
+  reponse_pays_nom: string | null
+  reponse_pays_iso: string | null
+  /** Ordre : les éléments dans l'ordre ATTENDU (la base les garde mélangés). */
+  elements_attendus: ElementOrdre[] | null
+  /** Paires : chaque élément de gauche avec son correspondant. */
+  paires_attendues: PaireSaisie[] | null
   explication: string | null
   difficulte: number
   theme: string | null
@@ -37,13 +48,31 @@ export interface EpreuveAdminAPI {
 }
 
 /** Corps de la saisie et de la modification. */
+export interface ElementOrdre {
+  texte: string
+  valeur: string | null
+}
+
+export interface PaireSaisie {
+  gauche: string
+  droite: string
+}
+
 export interface EpreuveForm {
   module: string
   enonce: string
   media_type: 'image' | 'audio' | null
   media_url: string | null
+  type_reponse: TypeReponse
+  /** Choix multiple. */
   propositions: string[]
   bonne_reponse: number
+  /** Carte : code ISO2 du pays attendu, en minuscules. */
+  reponse_pays_iso: string | null
+  /** Ordre : saisis DANS L'ORDRE ATTENDU ; le serveur les mélange avant d'écrire. */
+  elements: ElementOrdre[]
+  /** Paires. */
+  paires: PaireSaisie[]
   explication: string | null
   difficulte: number
   theme: string | null
@@ -70,9 +99,18 @@ export interface ModuleAdminAPI {
 export interface FormeDerivationAPI {
   forme: string
   module: string
+  type_reponse: TypeReponse
   libelle: string
   sources_eligibles: number
   deja_proposees: number
+}
+
+/** Libellés des types de réponse, communs au formulaire et à la revue. */
+export const LIBELLES_TYPE_REPONSE: Record<TypeReponse, string> = {
+  choix: 'Choix multiple',
+  carte: 'Carte',
+  ordre: 'Ordre',
+  paires: 'Paires',
 }
 
 export interface BilanDerivationAPI {
@@ -108,7 +146,8 @@ export interface EpreuveSignaleeAPI {
   module_code: string
   epreuve_etat: EtatEpreuve
   propositions: string[]
-  bonne_reponse: number
+  bonne_reponse: number | null
+  type_reponse: TypeReponse
   signalements: SignalementAdminAPI[]
 }
 
@@ -242,6 +281,19 @@ export const useAdminJeu = () => {
       method: 'POST',
     })).data
 
+  /**
+   * POST /api/admin/jeu/medias : dépose une photo ou un extrait sonore
+   * d'épreuve (feature 014) et renvoie l'adresse à placer dans l'épreuve.
+   */
+  const deposerMedia = async (fichier: File, type: 'image' | 'audio') => {
+    const corps = new FormData()
+    corps.append('type', type)
+    corps.append('fichier', fichier)
+    return (await adminFetch<ApiResponse<{ media_type: 'image' | 'audio', media_url: string }>>(
+      '/api/admin/jeu/medias', { method: 'POST', body: corps },
+    )).data
+  }
+
   const listerModules = async () =>
     (await adminFetch<ApiResponse<ModuleAdminAPI[]>>('/api/admin/jeu/modules')).data ?? []
 
@@ -352,7 +404,7 @@ export const useAdminJeu = () => {
     listerDefis, programmerDefi, deprogrammerDefi,
     epreuves, filtres, pagination, sort, loading, error,
     chargerEpreuves, obtenirEpreuve, creerEpreuve, modifierEpreuve,
-    publierEpreuve, retirerEpreuve, listerModules, modifierModule,
+    publierEpreuve, retirerEpreuve, listerModules, modifierModule, deposerMedia,
     listerFormes, deriver, revue, listerSignalements, deciderSignalement,
     allerPage, changerTri, reinitialiserPagination,
   }

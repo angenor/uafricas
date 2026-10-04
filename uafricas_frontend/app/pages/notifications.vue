@@ -51,6 +51,12 @@ const TYPES: Record<string, string> = {
   'jeu.duel_termine': 'Duels terminés',
   'jeu.signalement_traite': 'Signalements d\'épreuve',
   'jeu.gains_annules': 'Gains annulés',
+  'jeu.participation_acceptee': 'Concours : participations acceptées',
+  'jeu.participation_rejetee': 'Concours : participations refusées',
+  'jeu.participation_suspendue': 'Concours : participations suspendues',
+  'jeu.concours_resultats': 'Concours : résultats',
+  'jeu.concours_laureat': 'Concours : podium',
+  'jeu.concours_annule': 'Concours annulés',
 }
 
 const charger = async (reinitialiser = false) => {

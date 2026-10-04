@@ -27,24 +27,79 @@ export interface PropositionServieAPI {
   texte: string
 }
 
-/** L'épreuve AVANT la réponse : aucune clé de ce type ne dit la bonne réponse. */
+/** Les façons de répondre (feature 014). */
+export type TypeReponse = 'choix' | 'carte' | 'ordre' | 'paires'
+
+/**
+ * L'épreuve AVANT la réponse : aucune clé de ce type ne dit la bonne réponse.
+ * Pour l'ordre et les paires, les clés sont des rangs dans des tableaux stockés
+ * au hasard : elles ne révèlent rien non plus.
+ */
 export interface EpreuveServieAPI {
   id: string
+  type_reponse: TypeReponse
   enonce: string
   media_type: 'image' | 'audio' | null
   media_url: string | null
   difficulte: number
+  /** choix : propositions ; ordre : éléments ; paires : colonne de gauche ; carte : vide. */
   propositions: PropositionServieAPI[]
+  /** paires : colonne de droite, mélangée indépendamment. */
+  appariements: PropositionServieAPI[] | null
+}
+
+/**
+ * La réponse d'un membre : UNE seule forme renseignée. `{ cle: null }` : le
+ * temps s'est écoulé.
+ */
+export interface ReponseJoueur {
+  cle?: number | null
+  /** ordre : les clés dans l'ordre proposé. */
+  ordre?: number[]
+  /** paires : clé de droite pour chaque clé de gauche, par clé de gauche croissante. */
+  paires?: number[]
+  /** carte : code ISO2 du pays désigné, en minuscules. */
+  pays?: string
+}
+
+/** Une réponse est-elle juste, au vu de la solution ? Sert l'affichage du duel direct. */
+export const reponseJuste = (solution: SolutionAPI, reponse: ReponseJoueur | null | undefined): boolean => {
+  if (!reponse) return false
+  switch (solution.type_reponse) {
+    case 'choix': return reponse.cle != null && reponse.cle === solution.bonne_cle
+    case 'carte': return reponse.pays != null && reponse.pays === solution.bon_pays?.iso
+    case 'ordre': return JSON.stringify(reponse.ordre ?? null) === JSON.stringify(solution.solution)
+    case 'paires': return JSON.stringify(reponse.paires ?? null) === JSON.stringify(solution.solution)
+  }
+}
+
+export interface PaysCorrectionAPI {
+  iso: string
+  nom: string
+}
+
+/** La solution complète, selon le type ; commune aux parties et au duel direct. */
+export interface SolutionAPI {
+  type_reponse: TypeReponse
+  /** choix : la bonne clé. */
+  bonne_cle: number | null
+  /** ordre : clés dans l'ordre attendu ; paires : clé de droite attendue par clé de gauche croissante. */
+  solution: number[] | null
+  /** ordre : justification par clé (« 46,0 millions d'habitants »). */
+  valeurs: Record<string, string> | null
+  /** carte : le bon pays. */
+  bon_pays: PaysCorrectionAPI | null
 }
 
 export type IssueReponse = 'bonne' | 'mauvaise' | 'sans_reponse' | 'injouable'
 
-export interface CorrectionAPI {
+export interface CorrectionAPI extends SolutionAPI {
   rang: number
   epreuve_id: string
   issue: IssueReponse
-  bonne_cle: number
   cle_choisie: number | null
+  /** Ce qui a été joué, quel que soit le type. */
+  jouee: ReponseJoueur
   explication: string | null
   /** Lien vers le contenu dont l'épreuve est tirée, s'il existe. */
   lien: string | null
@@ -270,12 +325,16 @@ export const useJeu = () => {
   /**
    * POST /api/jeu/parties/{id}/repondre
    *
-   * `cle = null` : le temps s'est écoulé. Le serveur enregistre l'absence de
-   * réponse et renvoie la correction SANS présenter l'épreuve suivante, pour
+   * `{ cle: null }` : le temps s'est écoulé. Le serveur enregistre l'absence
+   * de réponse et renvoie la correction SANS présenter l'épreuve suivante, pour
    * que le membre la lise avant que l'horloge ne reparte.
+   *
+   * Un nombre (ou `null`) reste accepté pour le choix multiple.
    */
-  const repondre = (id: string, rang: number, cle: number | null) =>
-    appelAuth<CorrectionAPI>(`/parties/${id}/repondre`, { method: 'POST', body: { rang, cle } })
+  const repondre = (id: string, rang: number, reponse: ReponseJoueur | number | null) => {
+    const corps: ReponseJoueur = typeof reponse === 'object' && reponse !== null ? reponse : { cle: reponse }
+    return appelAuth<CorrectionAPI>(`/parties/${id}/repondre`, { method: 'POST', body: { rang, ...corps } })
+  }
 
   /** POST /api/jeu/parties/{id}/injouable : le média ne se charge pas. */
   const declarerInjouable = (id: string, rang: number) =>

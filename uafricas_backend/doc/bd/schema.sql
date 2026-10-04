@@ -226,6 +226,10 @@
 -- barème d'engagement, et rattache sa permission aux rôles créés par 15_seed.
 \ir schemas/37_jeu.sql
 
+-- Jeux variés et concours communautaires (feature 014) : prolonge le schéma
+-- `jeu` (types de réponse, concours, confrontations). Suppose 37_jeu.sql.
+\ir schemas/38_jeu_concours.sql
+
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- FIN DU SCHÉMA

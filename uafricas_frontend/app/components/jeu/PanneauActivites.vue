@@ -3,6 +3,8 @@
        s'affiche que si le module est ouvert au jeu : un module fermé par
        l'administration ne laisse aucune porte morte. -->
   <AfricansPanneau v-if="moduleJeu" titre="Activités" icone="fa-solid fa-gamepad">
+    <!-- Concours rattachés à ce module (feature 014) -->
+    <JeuConcoursEnCours :rattachement="module" compact class="mb-4" />
     <p class="text-[14px]/[1.5] text-af-corps">
       <template v-if="moduleJeu.disponible">
         Testez vos connaissances : {{ moduleJeu.epreuves_jouables }}

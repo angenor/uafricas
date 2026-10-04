@@ -28,6 +28,12 @@ export type TypeNotification =
   | 'jeu.duel_termine'
   | 'jeu.signalement_traite'
   | 'jeu.gains_annules'
+  | 'jeu.participation_acceptee'
+  | 'jeu.participation_rejetee'
+  | 'jeu.participation_suspendue'
+  | 'jeu.concours_resultats'
+  | 'jeu.concours_laureat'
+  | 'jeu.concours_annule'
 
 export interface Notification {
   id: string
@@ -82,6 +88,12 @@ export const iconeNotification = (type: TypeNotification): string => {
     'jeu.duel_termine': 'trophy',
     'jeu.signalement_traite': 'flag',
     'jeu.gains_annules': 'circle-exclamation',
+    'jeu.participation_acceptee': 'circle-check',
+    'jeu.participation_rejetee': 'circle-xmark',
+    'jeu.participation_suspendue': 'flag',
+    'jeu.concours_resultats': 'trophy',
+    'jeu.concours_laureat': 'medal',
+    'jeu.concours_annule': 'ban',
   }
   return icones[type] || 'bell'
 }
@@ -103,6 +115,12 @@ export const couleurNotification = (type: TypeNotification): string => {
     'jeu.duel_termine': 'text-amber-600',
     'jeu.signalement_traite': 'text-stone-500',
     'jeu.gains_annules': 'text-red-600',
+    'jeu.participation_acceptee': 'text-[var(--color-custom-green)]',
+    'jeu.participation_rejetee': 'text-red-600',
+    'jeu.participation_suspendue': 'text-red-600',
+    'jeu.concours_resultats': 'text-amber-600',
+    'jeu.concours_laureat': 'text-[var(--color-custom-chocolat)]',
+    'jeu.concours_annule': 'text-stone-500',
   }
   return couleurs[type] || 'text-stone-500'
 }

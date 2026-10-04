@@ -60,7 +60,9 @@ export const useAdmin = () => {
       body: options.body,
       headers: {
         Authorization: `Bearer ${userStore.accessToken}`,
-        'Content-Type': 'application/json',
+        // Un envoi de fichier (FormData) ne doit PAS porter ce type : le
+        // navigateur pose lui-même `multipart/form-data` avec sa frontière.
+        ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         ...(options.headers || {}),
       },
       onResponseError({ response }) {

@@ -4,7 +4,8 @@ Spec, plan et recette : `specs/013-activites-ludiques/`.
 
 ## Ce que la PR apporte
 
-- **Épreuves** saisies à la main ou dérivées du contenu publié (Codimoi, Afripulse, FactCheck), revues par un administrateur avant d'être jouables ; Afrolang en saisie seule.
+- **Épreuves** saisies à la main ou dérivées du contenu publié selon 22 formes de questions (Codimoi, Afripulse, FactCheck), revues par un administrateur avant d'être jouables ; Afrolang en saisie seule, avec un lot de 44 épreuves à revoir.
+- **Tirage varié** : une épreuve par contenu source avant toute deuxième, rotation des formes et des modules.
 - **Parties** de 10 épreuves, horloge tenue par le serveur : la bonne réponse ne part jamais avant la réponse, une épreuve comptée ne se rejoue pas.
 - **Défis** du jour et de la semaine, **Championship** par saisons (classement global, par pays, carte de l'Afrique colorée par rang).
 - **Duels entre amis**, différé (48 h, forfait) et direct (même épreuve au même instant, déconnexions tolérées). Le direct passe par le flux SSE de la messagerie, sans nouveau mécanisme temps réel.
@@ -38,7 +39,10 @@ Une valeur vide : appliquer d'abord les migrations `35*` manquantes.
    ./deploy.sh psql "SELECT type_source, count(*) FILTER (WHERE visible) FROM jeu.v_source GROUP BY 1"
    ```
 3. **Dériver puis revoir** : `/admin/activites/revue`, dérivation sur Codimoi, Afripulse et FactCheck, puis acceptation ou rejet des candidates. Rien de dérivé n'est jouable sans revue.
-4. **Saisir les épreuves Afrolang** dans `/admin/activites/epreuves` (aucune dérivation possible : pas de référentiel de langues).
+4. **Afrolang** (aucune dérivation possible : pas de référentiel de langues) : charger le lot de 44 épreuves, qui arrivent en revue, puis les relire et compléter par la saisie dans `/admin/activites/epreuves`.
+   ```bash
+   ./deploy.sh migrate uafricas_backend/doc/bd/seeds/013_jeu_afrolang_epreuves.sql
+   ```
 5. **Ouvrir un module** seulement quand il atteint le volume visé (100 épreuves jouables). En dessous de la taille d'une partie, il s'affiche de lui-même « bientôt disponible ».
 6. **Créer la première saison** dans `/admin/activites/saisons`. Sans saison, on joue, mais aucun classement du Championship ne se remplit.
 

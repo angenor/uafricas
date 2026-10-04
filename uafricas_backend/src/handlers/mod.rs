@@ -26,6 +26,7 @@ pub mod fiche_pays_social;
 pub mod gouvernance;
 pub mod jeu;
 pub mod jeu_classement;
+pub mod jeu_concours;
 pub mod jeu_defi;
 pub mod jeu_duel;
 pub mod livres;

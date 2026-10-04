@@ -1,6 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::{africanite, admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, engagement_cadeau, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, jeu, jeu_classement, jeu_defi, jeu_duel, livres, matching, media_detention, media_emission, media_episode, media_equipe, media_programmation, media_proposition, media_social, media_support, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
+use crate::handlers::{africanite, admin, africantives, afripulse_public, afrolang, afrolang_ressources, amitie, annonces, appels, arbre_genealogique, auth, bibliotheques_humaines, centres_culturels, codimoi, collaboration, contribution_signalement, contributions_fiche, element_social, engagement, engagement_cadeau, evenements, evenement_streaming, experts, facultes, fiches_pays, fiche_pays_social, gouvernance, jeu, jeu_classement, jeu_concours, jeu_defi, jeu_duel, livres, matching, media_detention, media_emission, media_episode, media_equipe, media_programmation, media_proposition, media_social, media_support, membres, messagerie, moocs, notification, profil_social, projets, rendez_vous, retrouve_amis, retrouve_amis_public, sabbatiques, session_signalement, stations_radio, television, vidafrica, vidafrica_contribution};
 
 /// Configure toutes les routes de l'API
 pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
@@ -295,6 +295,27 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/jeu/epreuves", web::post().to(admin::jeu::creer_epreuve))
                     // Les trois littéraux AVANT `/jeu/epreuves/{id}` : actix prend la
                     // première route qui correspond, et `formes` n'est pas un UUID.
+                    .route("/jeu/medias", web::post().to(admin::jeu::deposer_media))
+                    // Concours (feature 014) : les segments littéraux (`participations…`)
+                    // AVANT `{id}` de même profondeur, sinon « participations » serait lu
+                    // comme un identifiant.
+                    .route("/jeu/concours", web::get().to(admin::jeu_concours::lister_concours))
+                    .route("/jeu/concours", web::post().to(admin::jeu_concours::creer_concours))
+                    .route("/jeu/concours/participations", web::get().to(admin::jeu_concours::lister_participations))
+                    .route("/jeu/concours/participations/moderation-groupee", web::post().to(admin::jeu_concours::moderation_groupee))
+                    .route("/jeu/concours/participations/{pid}/accepter", web::post().to(admin::jeu_concours::accepter_participation))
+                    .route("/jeu/concours/participations/{pid}/rejeter", web::post().to(admin::jeu_concours::rejeter_participation))
+                    .route("/jeu/concours/participations/{pid}/retablir", web::post().to(admin::jeu_concours::retablir_participation))
+                    .route("/jeu/concours/participations/{pid}/signalements", web::get().to(admin::jeu_concours::signalements_participation))
+                    .route("/jeu/concours/{id}", web::get().to(admin::jeu_concours::obtenir_concours))
+                    .route("/jeu/concours/{id}", web::put().to(admin::jeu_concours::modifier_concours))
+                    .route("/jeu/concours/{id}", web::delete().to(admin::jeu_concours::supprimer_concours))
+                    .route("/jeu/concours/{id}/annuler", web::post().to(admin::jeu_concours::annuler_concours))
+                    .route("/jeu/concours/{id}/finalistes", web::get().to(admin::jeu_concours::finalistes))
+                    .route("/jeu/concours/{id}/deliberation", web::post().to(admin::jeu_concours::deliberer))
+                    .route("/jeu/concours/{id}/suivi", web::get().to(admin::jeu_concours::suivi))
+                    .route("/jeu/concours/{id}/votants/{uid}/ecarter", web::post().to(admin::jeu_concours::ecarter_votant))
+                    .route("/jeu/concours/{id}/votants/{uid}/retablir", web::post().to(admin::jeu_concours::retablir_votant))
                     .route("/jeu/epreuves/formes", web::get().to(admin::jeu::lister_formes))
                     .route("/jeu/epreuves/derivation", web::post().to(admin::jeu::deriver))
                     .route("/jeu/epreuves/revue", web::post().to(admin::jeu::revue))
@@ -647,6 +668,17 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
             .service(
                 web::scope("/jeu")
                     .route("/modules", web::get().to(jeu::lister_modules))
+                    // Concours (feature 014) : `mes-participations` AVANT `{id}`.
+                    .route("/concours", web::get().to(jeu_concours::lister_concours))
+                    .route("/concours/mes-participations", web::get().to(jeu_concours::mes_participations))
+                    .route("/concours/{id}", web::get().to(jeu_concours::obtenir_concours))
+                    .route("/concours/{id}/participations", web::get().to(jeu_concours::galerie))
+                    .route("/concours/{id}/participations", web::post().to(jeu_concours::deposer))
+                    .route("/concours/{id}/participations/{pid}", web::put().to(jeu_concours::remplacer))
+                    .route("/concours/{id}/participations/{pid}", web::delete().to(jeu_concours::retirer))
+                    .route("/concours/{id}/confrontations", web::post().to(jeu_concours::confrontation_courante))
+                    .route("/concours/{id}/confrontations/{cid}/voter", web::post().to(jeu_concours::voter))
+                    .route("/concours/{id}/participations/{pid}/signaler", web::post().to(jeu_concours::signaler))
                     .route("/parties", web::post().to(jeu::creer_partie))
                     .route("/parties/{id}", web::get().to(jeu::obtenir_partie))
                     .route("/parties/{id}/suivante", web::post().to(jeu::partie_suivante))

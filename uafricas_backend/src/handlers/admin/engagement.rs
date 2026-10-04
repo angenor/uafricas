@@ -116,6 +116,10 @@ pub const ACTIONS_INSTRUMENTEES: &[CatalogueAction] = &[
     ("jeu_duel_gagne", "Duel gagné", &["duel"], "services/jeu (résolution d'un duel)"),
     ("jeu_podium_saison", "Place d'honneur au Championship", &["saison"], "services/jeu (clôture de saison)"),
     ("jeu_signalement_confirme", "Signalement d'épreuve confirmé", &["signalement_epreuve"], "admin/jeu (signalements)"),
+    // Feature 014 : concours (règles à 0 point, réputation seulement).
+    ("jeu_concours_participation", "Participation publiée dans un concours", &["participation"], "services/jeu_concours (résultats ou annulation)"),
+    ("jeu_concours_podium", "Place sur le podium d'un concours", &["participation"], "services/jeu_concours (résultats)"),
+    ("jeu_concours_vote", "Votant actif dans un concours", &["concours"], "services/jeu_concours (résultats)"),
     (
         "ajustement_admin",
         "Correction manuelle (administration)",

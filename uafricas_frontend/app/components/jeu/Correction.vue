@@ -12,6 +12,10 @@
       </span>
     </p>
 
+    <p v-if="correction.bon_pays && correction.issue !== 'bonne'" class="mt-3 text-[15px]/[1.5] text-af-encre">
+      Le pays attendu : <strong>{{ correction.bon_pays.nom }}</strong>
+    </p>
+
     <p v-if="correction.explication" class="mt-3 text-[15px]/[1.6] text-af-corps">
       {{ correction.explication }}
     </p>

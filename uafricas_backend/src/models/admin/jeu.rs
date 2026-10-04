@@ -15,12 +15,28 @@ pub struct EpreuveAdmin {
     pub media_type: Option<String>,
     pub media_url: Option<String>,
     pub propositions: Vec<String>,
-    pub bonne_reponse: i16,
+    /// Renseignée pour le seul type `choix` (feature 014).
+    pub bonne_reponse: Option<i16>,
     pub explication: Option<String>,
     pub difficulte: i16,
     pub theme: Option<String>,
     pub pays_id: Option<Uuid>,
     pub pays_nom: Option<String>,
+    pub type_reponse: String,
+    /// Tableaux STOCKÉS (ordre aléatoire) : pour relire l'épreuve, voir
+    /// `elements_attendus` et `paires_attendues`.
+    pub solution: Option<Vec<i16>>,
+    pub appariements: Option<Vec<String>>,
+    pub valeurs: Option<Vec<String>>,
+    pub reponse_pays_id: Option<Uuid>,
+    pub reponse_pays_nom: Option<String>,
+    pub reponse_pays_iso: Option<String>,
+    /// ordre : les éléments remis dans l'ordre ATTENDU, pour l'édition et la revue.
+    #[sqlx(skip)]
+    pub elements_attendus: Option<Vec<ElementOrdre>>,
+    /// paires : chaque élément de gauche avec son correspondant.
+    #[sqlx(skip)]
+    pub paires_attendues: Option<Vec<PaireSaisie>>,
     pub origine: String,
     pub type_source: Option<String>,
     pub source_id: Option<Uuid>,
@@ -42,6 +58,8 @@ pub struct EpreuveAdmin {
 pub const EPREUVE_ADMIN_SELECT: &str = "
     SELECT e.id, e.module_code, e.enonce, e.media_type, e.media_url, e.propositions,
            e.bonne_reponse, e.explication, e.difficulte, e.theme, e.pays_id, p.nom AS pays_nom,
+           e.type_reponse, e.solution, e.appariements, e.valeurs, e.reponse_pays_id,
+           rp.nom AS reponse_pays_nom, LOWER(rp.code_iso2) AS reponse_pays_iso,
            e.origine, e.type_source, e.source_id, e.forme, e.etat, e.motif_rejet,
            e.nombre_servie, e.nombre_bonnes,
            CASE WHEN e.nombre_servie > 0
@@ -53,6 +71,7 @@ pub const EPREUVE_ADMIN_SELECT: &str = "
            e.created_at, e.updated_at
       FROM jeu.epreuve e
       LEFT JOIN shared.pays p ON p.id = e.pays_id
+      LEFT JOIN shared.pays rp ON rp.id = e.reponse_pays_id
       LEFT JOIN jeu.v_source s
              ON s.type_source = e.type_source AND s.source_id = e.source_id";
 
@@ -78,8 +97,27 @@ pub struct EpreuveRequest {
     pub enonce: String,
     pub media_type: Option<String>,
     pub media_url: Option<String>,
+    /// `choix` (défaut), `carte`, `ordre` ou `paires` (feature 014).
+    #[serde(default)]
+    pub type_reponse: Option<String>,
+    /// choix : les propositions.
+    #[serde(default)]
     pub propositions: Vec<String>,
-    pub bonne_reponse: i16,
+    /// choix : le rang de la bonne proposition.
+    #[serde(default)]
+    pub bonne_reponse: Option<i16>,
+    /// carte : le pays attendu, par son identifiant…
+    #[serde(default)]
+    pub reponse_pays_id: Option<Uuid>,
+    /// … ou par son code ISO2 (la liste des 55 pays du jeu), résolu par le serveur.
+    #[serde(default)]
+    pub reponse_pays_iso: Option<String>,
+    /// ordre : les éléments DANS L'ORDRE ATTENDU.
+    #[serde(default)]
+    pub elements: Option<Vec<ElementOrdre>>,
+    /// paires : chaque élément de gauche avec son correspondant.
+    #[serde(default)]
+    pub paires: Option<Vec<PaireSaisie>>,
     pub explication: Option<String>,
     pub difficulte: Option<i16>,
     pub theme: Option<String>,
@@ -88,14 +126,107 @@ pub struct EpreuveRequest {
     pub source_id: Option<Uuid>,
 }
 
+/// Un élément d'une épreuve « ordre », tel que l'administrateur le saisit.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ElementOrdre {
+    pub texte: String,
+    #[serde(default)]
+    pub valeur: Option<String>,
+}
+
+/// Une paire d'une épreuve « paires ».
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PaireSaisie {
+    pub gauche: String,
+    pub droite: String,
+}
+
+impl EpreuveAdmin {
+    /// Remet l'ordre et les paires dans leur forme ATTENDUE : la base les garde
+    /// mélangés (les clés servies n'en disent rien), l'administrateur les relit
+    /// comme il les a saisis.
+    pub fn avec_forme_attendue(mut self) -> Self {
+        let Some(solution) = self.solution.as_deref() else {
+            return self;
+        };
+        match self.type_reponse.as_str() {
+            "ordre" => {
+                self.elements_attendus = Some(
+                    solution
+                        .iter()
+                        .map(|&cle| {
+                            let i = (cle - 1) as usize;
+                            ElementOrdre {
+                                texte: self.propositions.get(i).cloned().unwrap_or_default(),
+                                valeur: self.valeurs.as_ref().and_then(|v| v.get(i).cloned()),
+                            }
+                        })
+                        .collect(),
+                );
+            }
+            "paires" => {
+                let droite = self.appariements.clone().unwrap_or_default();
+                self.paires_attendues = Some(
+                    self.propositions
+                        .iter()
+                        .zip(solution)
+                        .map(|(gauche, &cle)| PaireSaisie {
+                            gauche: gauche.clone(),
+                            droite: droite.get((cle - 1) as usize).cloned().unwrap_or_default(),
+                        })
+                        .collect(),
+                );
+            }
+            _ => {}
+        }
+        self
+    }
+}
+
+/// Mélange `textes` et renvoie, avec le tableau mélangé, la position (rang à
+/// partir de 1) où chaque texte d'origine a atterri. Stocker dans l'ordre de
+/// saisie ferait des clés servies la solution en clair (PC4).
+pub fn melanger(textes: &[String]) -> (Vec<String>, Vec<i16>) {
+    use rand::seq::SliceRandom;
+    let mut perm: Vec<usize> = (0..textes.len()).collect();
+    perm.shuffle(&mut rand::thread_rng());
+    let stocke: Vec<String> = perm.iter().map(|&i| textes[i].clone()).collect();
+    let mut position = vec![0i16; textes.len()];
+    for (k, &i) in perm.iter().enumerate() {
+        position[i] = (k + 1) as i16;
+    }
+    (stocke, position)
+}
+
+/// Refuse un texte vide ou un doublon (sans tenir compte de la casse).
+fn controler_textes(textes: &[String], quoi: &str) -> Result<(), String> {
+    let mut vus: Vec<String> = Vec::new();
+    for t in textes {
+        if t.is_empty() {
+            return Err(format!("{quoi} : aucun ne peut être vide"));
+        }
+        let cle = t.to_lowercase();
+        if vus.contains(&cle) {
+            return Err(format!("{quoi} : « {t} » figure deux fois"));
+        }
+        vus.push(cle);
+    }
+    Ok(())
+}
+
 /// Une épreuve nettoyée, prête à être écrite.
 pub struct EpreuveNettoyee {
     pub module: String,
     pub enonce: String,
     pub media_type: Option<String>,
     pub media_url: Option<String>,
+    pub type_reponse: String,
     pub propositions: Vec<String>,
-    pub bonne_reponse: i16,
+    pub bonne_reponse: Option<i16>,
+    pub solution: Option<Vec<i16>>,
+    pub appariements: Option<Vec<String>>,
+    pub valeurs: Option<Vec<String>>,
+    pub reponse_pays_id: Option<Uuid>,
     pub explication: Option<String>,
     pub difficulte: i16,
     pub theme: Option<String>,
@@ -117,16 +248,76 @@ impl EpreuveRequest {
             return Err("L'énoncé est obligatoire".into());
         }
 
-        let propositions: Vec<String> =
-            self.propositions.iter().map(|p| p.trim().to_string()).collect();
-        if propositions.len() < 2 {
-            return Err("Il faut au moins deux propositions".into());
-        }
-        if propositions.len() > 6 {
-            return Err("Une épreuve porte au plus six propositions".into());
-        }
-        if self.bonne_reponse < 1 || self.bonne_reponse as usize > propositions.len() {
-            return Err("La bonne réponse doit désigner l'une des propositions".into());
+        let type_reponse = self.type_reponse.as_deref().map(str::trim).unwrap_or("choix").to_string();
+        let mut propositions: Vec<String> = Vec::new();
+        let mut bonne_reponse = None;
+        let mut solution = None;
+        let mut appariements = None;
+        let mut valeurs = None;
+        let mut reponse_pays_id = None;
+
+        match type_reponse.as_str() {
+            "choix" => {
+                propositions = self.propositions.iter().map(|p| p.trim().to_string()).collect();
+                if propositions.len() < 2 {
+                    return Err("Il faut au moins deux propositions".into());
+                }
+                if propositions.len() > 6 {
+                    return Err("Une épreuve porte au plus six propositions".into());
+                }
+                let rang = self.bonne_reponse.unwrap_or(0);
+                if rang < 1 || rang as usize > propositions.len() {
+                    return Err("La bonne réponse doit désigner l'une des propositions".into());
+                }
+                bonne_reponse = Some(rang);
+            }
+            "carte" => {
+                reponse_pays_id =
+                    Some(self.reponse_pays_id.ok_or("Carte : désignez le pays attendu")?);
+            }
+            "ordre" => {
+                let elements = self.elements.as_deref().unwrap_or_default();
+                if !(3..=6).contains(&elements.len()) {
+                    return Err("Ordre : de 3 à 6 éléments".into());
+                }
+                let textes: Vec<String> = elements.iter().map(|e| e.texte.trim().to_string()).collect();
+                controler_textes(&textes, "Ordre, éléments")?;
+                let vals: Vec<Option<String>> = elements
+                    .iter()
+                    .map(|e| e.valeur.as_deref().map(str::trim).filter(|v| !v.is_empty()).map(str::to_string))
+                    .collect();
+                let nb_vals = vals.iter().filter(|v| v.is_some()).count();
+                if nb_vals != 0 && nb_vals != vals.len() {
+                    return Err("Ordre : renseignez la valeur de tous les éléments, ou d'aucun".into());
+                }
+                let (stocke, position) = melanger(&textes);
+                // solution[j] = position de stockage de l'élément attendu en j-ième.
+                solution = Some(position.clone());
+                if nb_vals > 0 {
+                    let mut v = vec![String::new(); vals.len()];
+                    for (i, val) in vals.into_iter().enumerate() {
+                        v[(position[i] - 1) as usize] = val.unwrap_or_default();
+                    }
+                    valeurs = Some(v);
+                }
+                propositions = stocke;
+            }
+            "paires" => {
+                let paires = self.paires.as_deref().unwrap_or_default();
+                if !(3..=5).contains(&paires.len()) {
+                    return Err("Paires : de 3 à 5 paires".into());
+                }
+                let gauche: Vec<String> = paires.iter().map(|p| p.gauche.trim().to_string()).collect();
+                let droite: Vec<String> = paires.iter().map(|p| p.droite.trim().to_string()).collect();
+                controler_textes(&gauche, "Paires, colonne de gauche")?;
+                controler_textes(&droite, "Paires, colonne de droite")?;
+                // La gauche garde l'ordre de saisie ; la droite est mélangée.
+                let (stocke, position) = melanger(&droite);
+                solution = Some(position);
+                appariements = Some(stocke);
+                propositions = gauche;
+            }
+            _ => return Err("Type de réponse inconnu : choix, carte, ordre ou paires".into()),
         }
 
         let media_type = texte_optionnel(&self.media_type);
@@ -155,8 +346,13 @@ impl EpreuveRequest {
             enonce,
             media_type,
             media_url,
+            type_reponse,
             propositions,
-            bonne_reponse: self.bonne_reponse,
+            bonne_reponse,
+            solution,
+            appariements,
+            valeurs,
+            reponse_pays_id,
             explication: texte_optionnel(&self.explication),
             difficulte,
             theme: texte_optionnel(&self.theme),
@@ -171,12 +367,21 @@ impl EpreuveRequest {
 /// manque (FR-074) : la contrainte SQL `ck_epreuve_jouable` reste le dernier
 /// filet, mais elle ne sait dire que « violation ».
 pub fn valider_publication(
+    type_reponse: &str,
     propositions: &[String],
     explication: Option<&str>,
     source_etat: &str,
 ) -> Result<(), String> {
     if explication.map(str::trim).unwrap_or("").is_empty() {
         return Err("L'explication est obligatoire".into());
+    }
+    if source_etat == "indisponible" {
+        return Err("Le contenu référencé n'est plus publié".into());
+    }
+    // Carte, ordre et paires : leur cohérence est contrôlée à la saisie, et la
+    // base la garantit (CHECK) ; le reste vaut pour le choix multiple.
+    if type_reponse != "choix" {
+        return Ok(());
     }
     if propositions.iter().filter(|p| !p.trim().is_empty()).count() < 2
         || propositions.iter().any(|p| p.trim().is_empty())
@@ -272,7 +477,8 @@ pub struct SignalementRow {
     pub module_code: String,
     pub epreuve_etat: String,
     pub propositions: Vec<String>,
-    pub bonne_reponse: i16,
+    pub bonne_reponse: Option<i16>,
+    pub type_reponse: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -295,7 +501,8 @@ pub struct EpreuveSignalee {
     pub module_code: String,
     pub epreuve_etat: String,
     pub propositions: Vec<String>,
-    pub bonne_reponse: i16,
+    pub bonne_reponse: Option<i16>,
+    pub type_reponse: String,
     pub signalements: Vec<SignalementAdmin>,
 }
 

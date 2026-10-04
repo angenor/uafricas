@@ -43,7 +43,7 @@
         :expire-a="etat.manche_fin_at"
         :maintenant="etat.maintenant"
         :duree-s="dureeS"
-        :arrete="etat.phase === 'revelation' || etat.ma_cle != null"
+        :arrete="etat.phase === 'revelation' || aRepondu"
         @expire="relire"
       />
 
@@ -51,11 +51,14 @@
         :epreuve="etat.epreuve"
         :choix="etat.ma_cle ?? choixEnVol"
         :bonne-cle="etat.correction?.bonne_cle ?? null"
-        :verrouillee="envoi || etat.ma_cle != null || etat.phase === 'revelation'"
+        :verrouillee="envoi || aRepondu || etat.phase === 'revelation'"
+        :solution="etat.correction"
+        :jouee="etat.correction?.ma_reponse ?? null"
         @choisir="repondre"
+        @repondre="repondre"
       />
 
-      <p v-if="etat.phase === 'question' && etat.ma_cle != null" class="text-center text-[14px]/[1.5] text-af-corps">
+      <p v-if="etat.phase === 'question' && aRepondu" class="text-center text-[14px]/[1.5] text-af-corps">
         <template v-if="etat.adversaire_a_repondu">Vous avez répondu tous les deux : correction…</template>
         <template v-else>Réponse envoyée. En attente de {{ adversaireNom }}…</template>
       </p>
@@ -69,10 +72,10 @@
         aria-live="polite"
       >
         <p class="text-[15px]/[1.5] text-af-encre">
-          Vous : <strong :class="etat.correction.ma_cle === etat.correction.bonne_cle ? 'text-af-vert' : 'text-af-live'">
-            {{ libelle(etat.correction.ma_cle) }}</strong>
-          · {{ adversaireNom }} : <strong :class="etat.correction.sa_cle === etat.correction.bonne_cle ? 'text-af-vert' : 'text-af-live'">
-            {{ libelle(etat.correction.sa_cle) }}</strong>
+          Vous : <strong :class="reponseJuste(etat.correction, etat.correction.ma_reponse) ? 'text-af-vert' : 'text-af-live'">
+            {{ libelle(etat.correction, etat.correction.ma_reponse) }}</strong>
+          · {{ adversaireNom }} : <strong :class="reponseJuste(etat.correction, etat.correction.sa_reponse) ? 'text-af-vert' : 'text-af-live'">
+            {{ libelle(etat.correction, etat.correction.sa_reponse) }}</strong>
         </p>
         <p v-if="etat.correction.explication" class="mt-2 text-[14px]/[1.6] text-af-corps">{{ etat.correction.explication }}</p>
         <p v-if="suivanteDans != null" class="mt-3 text-[13px]/[1.4] text-af-atone">
@@ -86,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { messageErreurJeu } from '~/composables/useJeu'
+import { messageErreurJeu, reponseJuste, type ReponseJoueur, type SolutionAPI } from '~/composables/useJeu'
 import type { EtatDuelDirectAPI } from '~/composables/useDuels'
 
 /**
@@ -112,7 +115,13 @@ const emit = defineEmits<{ termine: [] }>()
 const { etatDirect, repondreDirect, signal, dernierSignal, duelDirectEnCours } = useDuels()
 
 const SONDAGE_MS = 3000
-const dureeS = 30
+// La durée de la manche se lit dans ses bornes : l'ordre et les paires ont un
+// temps majoré, un média aussi.
+const dureeS = computed(() => {
+  const e = etat.value
+  if (!e?.manche_debut_at || !e.manche_fin_at) return 30
+  return Math.max(1, Math.round((new Date(e.manche_fin_at).getTime() - new Date(e.manche_debut_at).getTime()) / 1000))
+})
 
 const etat = ref<EtatDuelDirectAPI | null>(null)
 const envoi = ref(false)
@@ -136,8 +145,15 @@ const secondesAvant = (iso: string | null | undefined) => {
 const departDans = computed(() => (etat.value?.phase === 'attente' ? secondesAvant(etat.value.manche_debut_at) : null))
 const suivanteDans = computed(() => secondesAvant(etat.value?.prochaine_at))
 
-const libelle = (cle: number | null) =>
-  cle == null ? 'pas de réponse' : (etat.value?.epreuve?.propositions.find(p => p.cle === cle)?.texte ?? '—')
+/** Une réponse en clair : la proposition choisie, ou juste/faux pour les autres types. */
+const libelle = (solution: SolutionAPI, reponse: ReponseJoueur | null | undefined) => {
+  if (!reponse || Object.keys(reponse).length === 0) return 'pas de réponse'
+  if (reponse.cle != null) return etat.value?.epreuve?.propositions.find(p => p.cle === reponse.cle)?.texte ?? '—'
+  return reponseJuste(solution, reponse) ? 'juste' : 'faux'
+}
+
+/** Ordre et paires n'ont pas de clé unique : `ma_reponse` dit qu'on a répondu. */
+const aRepondu = computed(() => etat.value?.ma_cle != null || etat.value?.ma_reponse != null)
 
 /** Relit l'état et prend rendez-vous pour le prochain instant charnière. */
 const relire = async () => {
@@ -171,13 +187,13 @@ const programmer = (e: EtatDuelDirectAPI) => {
   if (dans > 0 && dans < 120_000) rendezVous = setTimeout(relire, dans)
 }
 
-const repondre = async (cle: number) => {
-  if (!etat.value || etat.value.phase !== 'question' || etat.value.ma_cle != null || envoi.value) return
+const repondre = async (reponse: number | ReponseJoueur) => {
+  if (!etat.value || etat.value.phase !== 'question' || aRepondu.value || envoi.value) return
   envoi.value = true
-  choixEnVol.value = cle
+  choixEnVol.value = typeof reponse === 'number' ? reponse : null
   erreur.value = ''
   try {
-    await repondreDirect(props.duelId, etat.value.rang, cle)
+    await repondreDirect(props.duelId, etat.value.rang, reponse)
     await relire()
   }
   catch (err) {
