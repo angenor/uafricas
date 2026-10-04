@@ -199,6 +199,8 @@ const totalProgrammations = computed(() =>
     </div>
 
     <template #rail>
+      <!-- Concours rattachés à ce module (feature 014) -->
+      <JeuPanneauConcours rattachement="afroculture" />
       <AfricansRecherche v-model="recherche" placeholder="Centre, ville…" />
 
       <AfricansPanneau titre="Statistiques" icone="fa-solid fa-chart-line">

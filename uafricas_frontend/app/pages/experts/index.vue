@@ -292,6 +292,8 @@ onMounted(async () => {
     </div>
 
     <template #rail>
+      <!-- Concours rattachés à ce module (feature 014) -->
+      <JeuPanneauConcours rattachement="diapertise" />
       <ExpertsPanneauFiltres
         v-model:selected-country="selectedCountry"
         v-model:selected-specialty="selectedSpecialty"

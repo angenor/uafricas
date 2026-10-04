@@ -251,6 +251,8 @@ onMounted(async () => {
     </div>
 
     <template #rail>
+      <!-- Concours rattachés à ce module (feature 014) -->
+      <JeuPanneauConcours rattachement="vidafrica" />
       <AfricansRecherche v-model="recherche" placeholder="Titre, artiste, film…" />
 
       <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders" action-libelle="Réinitialiser" @action="reinitialiser">

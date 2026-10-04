@@ -204,6 +204,8 @@ function formatDate(dateString: string | null) {
     </div>
 
     <template #rail>
+      <!-- Concours rattachés à ce module (feature 014) -->
+      <JeuPanneauConcours rattachement="numetech" />
       <AfricansPanneau titre="Contribuer" icone="fa-solid fa-file-lines">
         <div class="flex flex-col gap-3">
           <p class="text-[14px]/[1.4] text-af-corps">

@@ -194,6 +194,8 @@ onMounted(() => {
     </div>
 
     <template #rail>
+      <!-- Concours rattachés à ce module (feature 014) -->
+      <JeuPanneauConcours rattachement="muniversa" />
       <!-- Les quatre compteurs viennent d'un endpoint dédié qui les agrège côté
            serveur : ils portent sur tout le fonds, pas sur ce qui est affiché. -->
       <AfricansPanneau titre="Statistiques" icone="fa-solid fa-chart-line">

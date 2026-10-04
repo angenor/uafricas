@@ -332,6 +332,8 @@ const onPublicationReussie = async (detail: AnnonceDetailAPI) => {
     </div>
 
     <template #rail>
+      <!-- Concours rattachés à ce module (feature 014) -->
+      <JeuPanneauConcours rattachement="afromarket" />
       <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders" action-libelle="Réinitialiser" @action="resetFilters">
         <div class="flex flex-col gap-5">
           <div class="flex flex-col gap-2">

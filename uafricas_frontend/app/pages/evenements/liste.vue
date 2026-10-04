@@ -370,6 +370,8 @@ const handleMapClick = (location: { id: string }) => {
     </div>
 
     <template #rail>
+      <!-- Concours rattachés à ce module (feature 014) -->
+      <JeuPanneauConcours rattachement="africalive" />
       <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders">
         <div class="flex flex-col gap-5">
           <div class="flex flex-col gap-2">
