@@ -19,6 +19,32 @@ description: "Liste de tâches : feature 014, jeux variés et concours communaut
 5. US5 et US7 ;
 6. US8 et US9.
 
+**Avancement au 2026-10-04** : premier livrable terminé (T001 à T020). Carte, ordre et paires se jouent en partie libre, vérifiés par l'API et dans un navigateur à 375 et 1280 px. Écarts au plan :
+- `38_jeu_concours.sql` porte deux CHECK de plus que le modèle de données : `solution` n'existe que pour l'ordre et les paires, `appariements` que pour les paires.
+- `evaluer` prend le pays déjà résolu ; la résolution du code ISO (`resoudre_pays_joue`) est une fonction à part, parce qu'elle lit la base.
+- Au doigt, l'ordre se règle par les flèches de chaque ligne : le glisser-déposer natif du navigateur ne répond pas au toucher.
+- Dans les paires, toucher l'élément de gauche déjà actif ne le désactive plus. La recette l'a révélé : après une paire, l'élément suivant est sélectionné automatiquement, et le toucher, geste naturel, le désélectionnait et verrouillait la colonne de droite.
+- Le seed `94` mélange les éléments par des fonctions SQL, pas à la main (PC4) ; 0 solution sur 8 n'est l'identité.
+
+Étape 2 terminée (T021 à T024). Duel direct sur carte, ordre et paires, vérifié dans deux navigateurs (1280 et 390 px) : même épreuve, temps majoré à 45 s, révélation « juste / faux » pour les deux, victoire 3 à 1. Écarts :
+- T021 était déjà couvert par la phase 2 : le duel direct répond par `moteur::repondre`, donc par `evaluer`.
+- `ReponseOrdre` et `ReponsePaires` surveillent la liste des CLÉS, pas le tableau : l'état du duel direct est relu toutes les 3 s dans un objet neuf, et surveiller l'objet aurait effacé l'ordre en cours de construction. La recette le vérifie (ordre intact après 4,5 s).
+- `EtatDuelDirect` gagne `ma_reponse` : l'ordre et les paires n'ont pas de clé unique, `ma_cle` ne suffisait plus à savoir qu'on avait répondu.
+- `PUT /admin/jeu/regles` écrit aussi les primes de concours (avec leurs bornes) : la page renvoie l'objet lu, leur champ d'écran viendra avec les concours.
+
+US2 terminée (T025 à T030). Écarts :
+- La 013 déposait déjà ses médias, mais par les routes d'AUTRES modules (photos Afripulse, médias radio et télé avec des sons jusqu'à 80 Mo). `ChampMediaEpreuve` les remplace par la route du jeu.
+- **Défaut préexistant corrigé dans `useAdmin.ts`** : `adminFetch` posait `Content-Type: application/json` même sur un `FormData`, donc tout envoi de fichier par `adminFetch` échouait en 400 (« ContentTypeIncompatible »). Les composables d'upload existants le contournaient par un `$fetch` direct ; l'en-tête n'est plus posé quand le corps est un `FormData`.
+- T028 : pas de champ `copier_image` sur `Forme`. Toute forme à image copie son média, drapeaux compris. Une image EXTERNE (`https://…`) est gardée telle quelle, car la copier demanderait un client HTTP, donc une dépendance. Une copie orpheline (insertion refusée par l'unicité) est supprimée.
+- Recette : la photo stockée n'a plus ni bloc EXIF ni marqueur GPS (injecté dans l'original) ; un PNG renommé `.mp3` est refusé par sa signature binaire ; un extrait de 40 s est refusé par l'écran ; un site dont le fichier n'existe pas ne produit rien (`sans_media`).
+
+US3 terminée (T031 à T039) : 10 formes typées produisent 338 candidates en local (Afripulse 309, Codimoi 21, FactCheck 8). Écarts :
+- **Deux défauts du back-office corrigés au passage** : `EpreuveAdmin` et `SignalementRow` lisaient `bonne_reponse` en `i16` non optionnel. `query_as` étant vérifié à l'exécution, la liste des épreuves, la revue et la file des signalements auraient échoué dès la première épreuve carte, ordre ou paires.
+- La carte se saisit par **code ISO** (`reponse_pays_iso`, résolu par le serveur), sur la même liste de 55 pays que le jeu ; l'identifiant reste accepté.
+- `EpreuveAdmin` renvoie `elements_attendus` et `paires_attendues` : la base garde ordre et paires mélangés, l'administrateur les relit dans l'ordre de saisie.
+- **Trois formes de plus que le plan** (T034 à T037 n'en prévoyaient aucune hors Afripulse) : `paires_proverbes`, `paires_citations` (Codimoi) et `paires_idees_recues` (FactCheck, idée reçue ↔ réalité). Sans elles, Codimoi et FactCheck n'auraient eu aucune épreuve typée. Ils restent sous les 30 de SC-005 en local, faute de volume (12 proverbes, 8 idées reçues), comme Afrolang, qui ne s'enrichit que par la saisie.
+- Contrôles : 0 paire de monnaies en double, 0 peuple partagé en carte, 243 paires d'éléments consécutifs toutes à plus de 15 % d'écart dans le bon sens ; 8 solutions sur 191 égales à l'identité, soit le hasard attendu (1 chance sur 24).
+
 **Les cinq points de conception de [plan.md](./plan.md)**, rappelés dans les tâches qu'ils concernent (repère ⚠️ PCn) :
 - **PC1** : `resoudre_concours` est appelée par toute route qui lit un concours.
 - **PC2** : toutes les requêtes qui remplissent `EpreuveRow` lisent les nouvelles colonnes.
@@ -41,7 +67,7 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
 
 **Purpose** : poser la migration `38` complète. Elle sert les deux familles, mais elle est écrite une seule fois.
 
-- [ ] T001 Écrire `uafricas_backend/doc/bd/schemas/38_jeu_concours.sql`, partie épreuves ([data-model.md §1 à §4](./data-model.md)) :
+- [X] T001 Écrire `uafricas_backend/doc/bd/schemas/38_jeu_concours.sql`, partie épreuves ([data-model.md §1 à §4](./data-model.md)) :
   - la fonction `jeu.est_permutation(smallint[]) RETURNS boolean IMMUTABLE` ;
   - sur `jeu.epreuve` : `ADD COLUMN IF NOT EXISTS type_reponse VARCHAR(10) NOT NULL DEFAULT 'choix'`, `solution SMALLINT[]`, `appariements TEXT[]`, `valeurs TEXT[]`, `reponse_pays_id UUID REFERENCES shared.pays(id)` ;
   - `ALTER COLUMN bonne_reponse DROP NOT NULL` ;
@@ -49,16 +75,16 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
   - sur `jeu.reponse` : `reponse_detail SMALLINT[]` et `pays_choisi_id UUID REFERENCES shared.pays(id)` ;
   - sur `jeu.regles` : `majoration_ordre_paires_s` (15, 0..60), `prime_concours_participation` (2), `prime_concours_podium SMALLINT[]` (`{30,20,10}`, CHECK 3 valeurs ≥ 0 décroissantes) ;
   - `ck_gain_origine` élargi à `'concours'`.
-- [ ] T002 Compléter `uafricas_backend/doc/bd/schemas/38_jeu_concours.sql`, partie concours ([data-model.md §5 à §9](./data-model.md)) :
+- [X] T002 Compléter `uafricas_backend/doc/bd/schemas/38_jeu_concours.sql`, partie concours ([data-model.md §5 à §9](./data-model.md)) :
   - les tables `jeu.concours`, `jeu.participation`, `jeu.confrontation`, `jeu.resultat_concours`, `jeu.signalement_participation`, en `CREATE TABLE IF NOT EXISTS`, avec toutes leurs CHECK et leurs index ;
   - les deux index uniques de `confrontation` : `(concours_id, votant_id, a_id, b_id)`, et l'index partiel `(concours_id, votant_id) WHERE choix_id IS NULL` ;
   - CHECK `a_id < b_id`, `choix_id IN (a_id, b_id)`, `(choix_id IS NULL) = (vote_at IS NULL)`.
-- [ ] T003 Compléter `uafricas_backend/doc/bd/schemas/38_jeu_concours.sql`, partie engagement ([data-model.md §10](./data-model.md)), en `ON CONFLICT DO NOTHING` :
+- [X] T003 Compléter `uafricas_backend/doc/bd/schemas/38_jeu_concours.sql`, partie engagement ([data-model.md §10](./data-model.md)), en `ON CONFLICT DO NOTHING` :
   - 3 règles à 0 point, catégorie `jeux` : `jeu_concours_participation` (réputation 1), `jeu_concours_podium` (5), `jeu_concours_vote` (1) ;
   - 2 badges `actions_comptees` : `jeu_laureat` (1 × podium, icône `medal`) et `jeu_jure_populaire` (5 × vote, icône `scale-balanced`).
 
   Vérifier que les icônes sont enregistrées dans `uafricas_frontend/app/plugins/fontawesome.ts` et les y ajouter sinon.
-- [ ] T004 Ajouter `\ir schemas/38_jeu_concours.sql` après `37_jeu.sql` dans `uafricas_backend/doc/bd/schema.sql`. Appliquer en local deux fois de suite : aucune erreur, et le nombre d'épreuves servables est le même avant et après (toutes de type `choix`).
+- [X] T004 Ajouter `\ir schemas/38_jeu_concours.sql` après `37_jeu.sql` dans `uafricas_backend/doc/bd/schema.sql`. Appliquer en local deux fois de suite : aucune erreur, et le nombre d'épreuves servables est le même avant et après (toutes de type `choix`).
 
 ---
 
@@ -68,28 +94,28 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
 
 **⚠️ CRITICAL** : aucune histoire de la famille A ne commence avant la fin de cette phase.
 
-- [ ] T005 Étendre `EpreuveRow` dans `uafricas_backend/src/models/jeu.rs` (`type_reponse`, `solution: Option<Vec<i16>>`, `appariements: Option<Vec<String>>`, `valeurs: Option<Vec<String>>`, `reponse_pays_id: Option<Uuid>`, `bonne_reponse: Option<i16>`) et sa constante de colonnes. ⚠️ **PC2** : relire **chaque** `query_as::<_, EpreuveRow>` de `services/jeu.rs`, `handlers/jeu.rs`, `handlers/jeu_duel.rs`, `handlers/admin/jeu.rs` et vérifier qu'elle passe par la constante ; corriger celles qui listent leurs colonnes à la main.
-- [ ] T006 Ajouter dans `uafricas_backend/src/models/jeu.rs` :
+- [X] T005 Étendre `EpreuveRow` dans `uafricas_backend/src/models/jeu.rs` (`type_reponse`, `solution: Option<Vec<i16>>`, `appariements: Option<Vec<String>>`, `valeurs: Option<Vec<String>>`, `reponse_pays_id: Option<Uuid>`, `bonne_reponse: Option<i16>`) et sa constante de colonnes. ⚠️ **PC2** : relire **chaque** `query_as::<_, EpreuveRow>` de `services/jeu.rs`, `handlers/jeu.rs`, `handlers/jeu_duel.rs`, `handlers/admin/jeu.rs` et vérifier qu'elle passe par la constante ; corriger celles qui listent leurs colonnes à la main.
+- [X] T006 Ajouter dans `uafricas_backend/src/models/jeu.rs` :
   - `ReponseJoueur`, avec les champs facultatifs `cle`, `ordre`, `paires` et `pays` : désérialisation de la forme de [api-membre.md §1](./contracts/api-membre.md) ;
   - `PropositionServie` réutilisée pour `appariements` ;
   - `EpreuveServie`, qui gagne `type_reponse` et `appariements: Option<Vec<PropositionServie>>` ;
   - `Correction` et `CorrectionManche`, qui gagnent `type_reponse`, `solution`, `valeurs` (clé → texte), `bon_pays { iso, nom }` et `jouee`, avec `bonne_cle` passé en `Option<i16>`.
-- [ ] T007 Écrire `evaluer(epreuve: &EpreuveRow, reponse: &ReponseJoueur, pays_iso_vers_id) -> Result<Option<bool>, ApiErreur>` dans `uafricas_backend/src/services/jeu.rs` (research D2) :
+- [X] T007 Écrire `evaluer(epreuve: &EpreuveRow, reponse: &ReponseJoueur, pays_iso_vers_id) -> Result<Option<bool>, ApiErreur>` dans `uafricas_backend/src/services/jeu.rs` (research D2) :
   - `None` = sans réponse ;
   - 400 si la forme ne correspond pas au type, si `ordre` ou `paires` n'est pas une permutation exacte des clés `1..n`, ou si le pays n'est pas l'un des 55 ;
   - juste si et seulement si tout est juste.
 
   Le code ISO2 se résout en `pays_id` par `shared.pays`, borné à `PAYS_AFRICAINS_ISO2`.
-- [ ] T008 Dans `uafricas_backend/src/services/jeu.rs`, faire passer `inscrire_reponse` par `evaluer` et écrire `reponse_detail` ou `pays_choisi_id` dans `jeu.reponse`. `correction_existante` les relit pour reconstruire la correction à l'identique (idempotence). Le choix multiple garde exactement son comportement : même issue, même gain.
-- [ ] T009 Dans `uafricas_backend/src/services/jeu.rs`, étendre `servir` : `appariements` mélangés indépendamment des propositions, avec des clés égales à leur rang stocké, et rien de la solution dans `EpreuveServie`. ⚠️ **PC3** : `servir_stable` mélange aussi `appariements`, avec une graine dérivée (`graine ^ 0x9E37_79B9`), et trie d'abord par clé pour que l'ordre soit stable entre deux relectures.
-- [ ] T010 Dans `uafricas_backend/src/services/jeu.rs`, ajouter `majoration_ordre_paires_s` à `ReglesJeu` (models) et à `delai_ms` pour `ordre` et `paires`, cumulable avec `MARGE_MEDIA_MS`. Exposer `delai_ms` dans `EpreuveServie` si ce n'est pas déjà le cas.
-- [ ] T011 Construire la correction étendue dans `uafricas_backend/src/services/jeu.rs` (fonction `construire_correction`, partagée par `inscrire_reponse` et `correction_existante`) :
+- [X] T008 Dans `uafricas_backend/src/services/jeu.rs`, faire passer `inscrire_reponse` par `evaluer` et écrire `reponse_detail` ou `pays_choisi_id` dans `jeu.reponse`. `correction_existante` les relit pour reconstruire la correction à l'identique (idempotence). Le choix multiple garde exactement son comportement : même issue, même gain.
+- [X] T009 Dans `uafricas_backend/src/services/jeu.rs`, étendre `servir` : `appariements` mélangés indépendamment des propositions, avec des clés égales à leur rang stocké, et rien de la solution dans `EpreuveServie`. ⚠️ **PC3** : `servir_stable` mélange aussi `appariements`, avec une graine dérivée (`graine ^ 0x9E37_79B9`), et trie d'abord par clé pour que l'ordre soit stable entre deux relectures.
+- [X] T010 Dans `uafricas_backend/src/services/jeu.rs`, ajouter `majoration_ordre_paires_s` à `ReglesJeu` (models) et à `delai_ms` pour `ordre` et `paires`, cumulable avec `MARGE_MEDIA_MS`. Exposer `delai_ms` dans `EpreuveServie` si ce n'est pas déjà le cas.
+- [X] T011 Construire la correction étendue dans `uafricas_backend/src/services/jeu.rs` (fonction `construire_correction`, partagée par `inscrire_reponse` et `correction_existante`) :
   - `ordre` : `solution` + `valeurs` ;
   - `paires` : `solution` réindexée **par ordre croissant de clé de gauche** ;
   - `carte` : `bon_pays` lu dans `shared.pays` ;
   - `choix` : `bonne_cle`.
-- [ ] T012 [P] Étendre les types de `uafricas_frontend/app/composables/useJeu.ts` (`TypeReponse`, `EpreuveServieAPI.type_reponse` et `appariements`, `ReponseJoueur`, `CorrectionAPI` étendue) et faire passer `repondre(partieId, rang, reponse: ReponseJoueur)` à la place de `cle`. Garder un appel compatible `{ cle }` pour le choix multiple.
-- [ ] T013 Lancer `cargo build`. Rejouer en API une partie de la 013 sur des épreuves `choix` : mêmes issues, mêmes gains, même correction, plus le champ `type_reponse: "choix"` (non-régression).
+- [X] T012 [P] Étendre les types de `uafricas_frontend/app/composables/useJeu.ts` (`TypeReponse`, `EpreuveServieAPI.type_reponse` et `appariements`, `ReponseJoueur`, `CorrectionAPI` étendue) et faire passer `repondre(partieId, rang, reponse: ReponseJoueur)` à la place de `cle`. Garder un appel compatible `{ cle }` pour le choix multiple.
+- [X] T013 Lancer `cargo build`. Rejouer en API une partie de la 013 sur des épreuves `choix` : mêmes issues, mêmes gains, même correction, plus le champ `type_reponse: "choix"` (non-régression).
 
 **Checkpoint** : le moteur sait corriger les quatre types ; le choix multiple n'a pas bougé.
 
@@ -103,39 +129,39 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
 
 ### Palier 1 — partie libre
 
-- [ ] T014 [P] [US1] Écrire le seed local `uafricas_backend/doc/bd/seeds-locaux/94_seed_local_jeu_types.sql`, idempotent :
+- [X] T014 [P] [US1] Écrire le seed local `uafricas_backend/doc/bd/seeds-locaux/94_seed_local_jeu_types.sql`, idempotent :
   - 4 épreuves `carte` (Afripulse) ;
   - 4 épreuves `ordre` (Afripulse : populations, avec `valeurs` ; Afrolang : 3 langues par nombre de locuteurs) ;
   - 4 épreuves `paires` (Codimoi : proverbe ↔ pays ; Afrolang : mot ↔ traduction) ;
   - toutes `jouable`, avec une explication.
 
   ⚠️ **PC4** : les éléments et la colonne de droite sont **insérés dans un ordre mélangé**, et `solution` est calculée en conséquence. Ne jamais insérer dans l'ordre attendu.
-- [ ] T015 [P] [US1] Créer `uafricas_frontend/app/components/jeu/ReponseCarte.vue`, en Tailwind pur :
+- [X] T015 [P] [US1] Créer `uafricas_frontend/app/components/jeu/ReponseCarte.vue`, en Tailwind pur :
   - `CommonCarteAfriqueValeurs` cliquable, avec mise en évidence du pays survolé et du pays choisi, et agrandissement possible sur téléphone ;
   - **une liste de pays accessible** (champ de recherche + liste sur `NOMS_PAYS_FR`, entièrement au clavier, FR-010) ;
   - bouton « Valider » ; émet `{ pays: iso }` ;
   - à la correction, colore en vert le bon pays et en rouge le pays joué.
-- [ ] T016 [P] [US1] Créer `uafricas_frontend/app/components/jeu/ReponseOrdre.vue` :
+- [X] T016 [P] [US1] Créer `uafricas_frontend/app/components/jeu/ReponseOrdre.vue` :
   - liste réordonnable au glisser-déposer (API Drag and Drop natif, plus la gestion du toucher sur téléphone) ;
   - boutons « monter » et « descendre » sur chaque ligne, pour le clavier ;
   - affichage du critère tiré de l'énoncé, bouton « Valider » ; émet `{ ordre: [cles] }` ;
   - à la correction, affiche l'ordre attendu avec les `valeurs` et marque les positions fausses.
-- [ ] T017 [P] [US1] Créer `uafricas_frontend/app/components/jeu/ReponsePaires.vue` :
+- [X] T017 [P] [US1] Créer `uafricas_frontend/app/components/jeu/ReponsePaires.vue` :
   - deux colonnes ; on touche un élément de gauche, puis un élément de droite, pour les relier ;
   - une couleur par paire ; retoucher une paire la défait ;
   - accessible au clavier (Tab, puis Entrée) ;
   - « Valider » actif quand toutes les paires sont faites ; émet `{ paires: [...] }` dans l'ordre croissant des clés de gauche ;
   - à la correction, montre les bonnes paires.
-- [ ] T018 [US1] Dans `uafricas_frontend/app/components/jeu/CarteEpreuve.vue`, aiguiller selon `type_reponse` (le choix multiple est inchangé). Le minuteur et l'envoi `cle: null` à l'expiration restent communs. Dans `uafricas_frontend/app/components/jeu/Correction.vue`, rendre la solution par type.
-- [ ] T019 [US1] Dans `uafricas_frontend/app/pages/activites/partie/[id].vue`, transmettre la réponse typée à `useJeu().repondre`. Vérifier le bilan de partie.
-- [ ] T020 [US1] Dérouler [quickstart.md, scénario 1](./quickstart.md), points 1 à 7, en partie libre ; corriger les écarts. Le point 6 (fuite de la solution) est bloquant.
+- [X] T018 [US1] Dans `uafricas_frontend/app/components/jeu/CarteEpreuve.vue`, aiguiller selon `type_reponse` (le choix multiple est inchangé). Le minuteur et l'envoi `cle: null` à l'expiration restent communs. Dans `uafricas_frontend/app/components/jeu/Correction.vue`, rendre la solution par type.
+- [X] T019 [US1] Dans `uafricas_frontend/app/pages/activites/partie/[id].vue`, transmettre la réponse typée à `useJeu().repondre`. Vérifier le bilan de partie.
+- [X] T020 [US1] Dérouler [quickstart.md, scénario 1](./quickstart.md), points 1 à 7, en partie libre ; corriger les écarts. Le point 6 (fuite de la solution) est bloquant.
 
 ### Palier 2 — défi, duel différé, duel direct
 
-- [ ] T021 [US1] Dans `uafricas_backend/src/handlers/jeu_duel.rs`, faire passer `repondre_direct` par `ReponseJoueur` et `evaluer`, et enregistrer `reponse_detail` et `pays_choisi_id`. `etat_direct` sert `EpreuveServie` par `servir_stable` (PC3) et la `CorrectionManche` étendue en phase de révélation. Le délai de manche passe par `delai_epreuve_ms`, majoration comprise.
-- [ ] T022 [US1] Dans `uafricas_frontend/app/components/jeu/DuelDirectSalle.vue`, monter les mêmes composants de réponse que `CarteEpreuve` et envoyer la réponse typée. La révélation montre la solution par type pour les deux joueurs.
-- [ ] T023 [US1] Vérifier défi du jour et duel différé sur des épreuves des nouveaux types : ils passent par `inscrire_reponse`, donc aucun code ne devrait changer. Dérouler [quickstart.md, scénario 1](./quickstart.md), point 8, avec deux navigateurs.
-- [ ] T024 [US1] Ajouter le champ « Temps majoré pour l'ordre et les paires » à `uafricas_frontend/app/pages/admin/activites/regles.vue` et au `PUT /admin/jeu/regles` de `uafricas_backend/src/handlers/admin/jeu.rs` (bornes 0 à 60, audit `REGLES_MODIFIEES`).
+- [X] T021 [US1] Dans `uafricas_backend/src/handlers/jeu_duel.rs`, faire passer `repondre_direct` par `ReponseJoueur` et `evaluer`, et enregistrer `reponse_detail` et `pays_choisi_id`. `etat_direct` sert `EpreuveServie` par `servir_stable` (PC3) et la `CorrectionManche` étendue en phase de révélation. Le délai de manche passe par `delai_epreuve_ms`, majoration comprise.
+- [X] T022 [US1] Dans `uafricas_frontend/app/components/jeu/DuelDirectSalle.vue`, monter les mêmes composants de réponse que `CarteEpreuve` et envoyer la réponse typée. La révélation montre la solution par type pour les deux joueurs.
+- [X] T023 [US1] Vérifier défi du jour et duel différé sur des épreuves des nouveaux types : ils passent par `inscrire_reponse`, donc aucun code ne devrait changer. Dérouler [quickstart.md, scénario 1](./quickstart.md), point 8, avec deux navigateurs.
+- [X] T024 [US1] Ajouter le champ « Temps majoré pour l'ordre et les paires » à `uafricas_frontend/app/pages/admin/activites/regles.vue` et au `PUT /admin/jeu/regles` de `uafricas_backend/src/handlers/admin/jeu.rs` (bornes 0 à 60, audit `REGLES_MODIFIEES`).
 
 **Checkpoint** : US1 livrée. Les nouveaux types se jouent partout ; tirage, score, défis et duels sont inchangés.
 
@@ -147,24 +173,24 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
 
 **Independent Test** : [quickstart.md, scénario 2](./quickstart.md).
 
-- [ ] T025 [US2] Créer `POST /api/admin/jeu/medias` (multipart) dans `uafricas_backend/src/handlers/admin/jeu.rs` (research D4, [api-admin.md §1](./contracts/api-admin.md)) :
+- [X] T025 [US2] Créer `POST /api/admin/jeu/medias` (multipart) dans `uafricas_backend/src/handlers/admin/jeu.rs` (research D4, [api-admin.md §1](./contracts/api-admin.md)) :
   - `image` : `image_validation::normaliser_photo`, écrite dans `uploads/jeu/images/<uuid>.<ext>` ;
   - `audio` : signature binaire MP3 (`ID3` ou synchronisation `0xFFE`), OGG (`OggS`), M4A (`ftyp` à l'octet 4) ou WAV (`RIFF….WAVE`), 1 Mo au plus, écrite dans `uploads/jeu/audios/` ;
   - créer les dossiers au besoin ; audit `MEDIA_EPREUVE_DEPOSE` ;
   - route déclarée dans `uafricas_backend/src/routes.rs` **avant** `/jeu/epreuves/{id}`.
-- [ ] T026 [P] [US2] Créer `uafricas_frontend/app/components/admin/jeu/ChampMediaEpreuve.vue` (daisyUI) :
+- [X] T026 [P] [US2] Créer `uafricas_frontend/app/components/admin/jeu/ChampMediaEpreuve.vue` (daisyUI) :
   - choix image ou son, dépôt, aperçu (`<img>` ou `<audio controls>`) ;
   - pour un son, lecture de la durée par un élément `Audio` **avant l'envoi**, et refus au-delà de 30 s ;
   - émet `{ media_type, media_url }`.
 
   Ajouter `deposerMedia(fichier, type)` à `uafricas_frontend/app/composables/useAdminJeu.ts`.
-- [ ] T027 [US2] Monter `ChampMediaEpreuve` dans `uafricas_frontend/app/components/admin/jeu/EpreuveFormulaire.vue`, à la place de la saisie d'URL. Une URL existante reste affichée et remplaçable.
-- [ ] T028 [US2] Dans `uafricas_backend/src/services/jeu_derivation.rs`, permettre à une forme de **copier** l'image source :
+- [X] T027 [US2] Monter `ChampMediaEpreuve` dans `uafricas_frontend/app/components/admin/jeu/EpreuveFormulaire.vue`, à la place de la saisie d'URL. Une URL existante reste affichée et remplaçable.
+- [X] T028 [US2] Dans `uafricas_backend/src/services/jeu_derivation.rs`, permettre à une forme de **copier** l'image source :
   - champ `copier_image: bool` sur `Forme` ;
   - à l'insertion de la candidate, copier le fichier référencé par `media_url` (chemin `/uploads/…` résolu sous `UPLOAD_DIR`) vers `uploads/jeu/images/<uuid>.<ext>`, et enregistrer la copie ;
   - une source dont l'image est introuvable ne produit rien (compter `sans_media` dans `BilanForme`).
-- [ ] T029 [US2] Ajouter les formes `photo_recette` (source `recette_culinaire`, image = `images[1]`) et `photo_site` (source `site_touristique`, image = `image_url`) à `FORMES` dans `uafricas_backend/src/services/jeu_derivation.rs` : énoncés « De quel pays vient ce plat ? » et « Dans quel pays se trouve ce site ? », sans nommer le plat ni le site ; distracteurs `PaysAfricains`.
-- [ ] T030 [US2] Dérouler [quickstart.md, scénario 2](./quickstart.md), dont la vérification de la suppression des EXIF et le refus d'un PNG renommé en `.mp3`.
+- [X] T029 [US2] Ajouter les formes `photo_recette` (source `recette_culinaire`, image = `images[1]`) et `photo_site` (source `site_touristique`, image = `image_url`) à `FORMES` dans `uafricas_backend/src/services/jeu_derivation.rs` : énoncés « De quel pays vient ce plat ? » et « Dans quel pays se trouve ce site ? », sans nommer le plat ni le site ; distracteurs `PaysAfricains`.
+- [X] T030 [US2] Dérouler [quickstart.md, scénario 2](./quickstart.md), dont la vérification de la suppression des EXIF et le refus d'un PNG renommé en `.mp3`.
 
 **Checkpoint** : US2 livrée.
 
@@ -176,25 +202,25 @@ Monorepo web : `uafricas_backend/src/`, `uafricas_backend/doc/bd/`, `uafricas_fr
 
 **Independent Test** : [quickstart.md, scénario 3](./quickstart.md).
 
-- [ ] T031 [US3] Étendre `CreerEpreuveRequest` et `ModifierEpreuveRequest` dans `uafricas_backend/src/models/admin/jeu.rs` avec `type_reponse`, `reponse_pays_id`, `elements: [{ texte, valeur? }]` et `paires: [{ gauche, droite }]` ([api-admin.md §1](./contracts/api-admin.md)).
-- [ ] T032 [US3] Dans `uafricas_backend/src/handlers/admin/jeu.rs` (`creer_epreuve`, `modifier_epreuve`), valider par type, avec des 400 qui nomment le champ : bornes, doublons, `valeur` sur tous les éléments ou sur aucun, pays parmi les 55.
+- [X] T031 [US3] Étendre `CreerEpreuveRequest` et `ModifierEpreuveRequest` dans `uafricas_backend/src/models/admin/jeu.rs` avec `type_reponse`, `reponse_pays_id`, `elements: [{ texte, valeur? }]` et `paires: [{ gauche, droite }]` ([api-admin.md §1](./contracts/api-admin.md)).
+- [X] T032 [US3] Dans `uafricas_backend/src/handlers/admin/jeu.rs` (`creer_epreuve`, `modifier_epreuve`), valider par type, avec des 400 qui nomment le champ : bornes, doublons, `valeur` sur tous les éléments ou sur aucun, pays parmi les 55.
 
   ⚠️ **PC4** : **mélanger** les éléments (et la colonne de droite) avant l'insertion et calculer `solution` en conséquence. `obtenir_epreuve` renvoie l'épreuve **remise dans l'ordre attendu** pour l'édition.
-- [ ] T033 [P] [US3] Étendre `uafricas_frontend/app/components/admin/jeu/EpreuveFormulaire.vue` (daisyUI, labels `flex flex-col`) :
+- [X] T033 [P] [US3] Étendre `uafricas_frontend/app/components/admin/jeu/EpreuveFormulaire.vue` (daisyUI, labels `flex flex-col`) :
   - sélecteur de type ;
   - `carte` : sélecteur de pays sur `NOMS_PAYS_FR` ;
   - `ordre` : 3 à 6 lignes réordonnables avec valeur facultative et un rappel « saisissez dans l'ordre attendu » ;
   - `paires` : 3 à 5 lignes gauche/droite.
 
   Mettre à jour les types de `uafricas_frontend/app/composables/useAdminJeu.ts`.
-- [ ] T034 [US3] Étendre `Forme` dans `uafricas_backend/src/services/jeu_derivation.rs` : champ `type_reponse`, colonnes facultatives `solution`, `appariements`, `valeurs` et `reponse_pays_id` dans `SourceEligible` (`#[sqlx(default)]`) ; `deriver_forme` écrit selon le type. Ajouter `type_reponse` à `EtatForme` (écran de revue).
+- [X] T034 [US3] Étendre `Forme` dans `uafricas_backend/src/services/jeu_derivation.rs` : champ `type_reponse`, colonnes facultatives `solution`, `appariements`, `valeurs` et `reponse_pays_id` dans `SourceEligible` (`#[sqlx(default)]`) ; `deriver_forme` écrit selon le type. Ajouter `type_reponse` à `EtatForme` (écran de revue).
 
   ⚠️ **PC4** : pour `ordre` et `paires`, la requête rend les éléments **dans l'ordre attendu**, et c'est le Rust qui les mélange avant l'insertion et calcule `solution`. Un seul endroit, testé une fois.
-- [ ] T035 [US3] Ajouter les formes `ordre_population` et `ordre_superficie` (pivot : fiche ; 3 autres fiches tirées au hasard ; **écart d'au moins 15 % entre valeurs consécutives**, sinon rien ; `valeurs` via `jeu.fmt_habitants` et `jeu.fmt_km2`) dans `uafricas_backend/src/services/jeu_derivation.rs`.
-- [ ] T036 [US3] Ajouter les formes `paires_capitales` et `paires_monnaies` (pivot + 3 fiches ; pour les monnaies, **4 valeurs toutes distinctes** sans tenir compte de la casse, sinon rien) dans `uafricas_backend/src/services/jeu_derivation.rs`.
-- [ ] T037 [US3] Ajouter les formes `carte_capitale` (« Désignez le pays dont la capitale est X »), `carte_site` et `carte_peuple` dans `uafricas_backend/src/services/jeu_derivation.rs`. `carte_peuple` ne retient qu'un peuple déclaré par **un seul** pays et cité dans les langues d'aucun autre ; `reponse_pays_id` = pays du pivot.
-- [ ] T038 [US3] Dans `uafricas_frontend/app/pages/admin/activites/revue.vue`, afficher le type de réponse de chaque forme et de chaque candidate, avec un aperçu de la solution (ordre attendu, paires, pays) pour que la revue se fasse sans ouvrir l'épreuve.
-- [ ] T039 [US3] Dérouler [quickstart.md, scénario 3](./quickstart.md) : dérivation, trois requêtes SQL d'ambiguïté (aucun résultat), revue, saisie refusée, et le décompte SC-005 (au moins 30 épreuves hors `choix` par module pilote ; Afrolang attendu en dessous).
+- [X] T035 [US3] Ajouter les formes `ordre_population` et `ordre_superficie` (pivot : fiche ; 3 autres fiches tirées au hasard ; **écart d'au moins 15 % entre valeurs consécutives**, sinon rien ; `valeurs` via `jeu.fmt_habitants` et `jeu.fmt_km2`) dans `uafricas_backend/src/services/jeu_derivation.rs`.
+- [X] T036 [US3] Ajouter les formes `paires_capitales` et `paires_monnaies` (pivot + 3 fiches ; pour les monnaies, **4 valeurs toutes distinctes** sans tenir compte de la casse, sinon rien) dans `uafricas_backend/src/services/jeu_derivation.rs`.
+- [X] T037 [US3] Ajouter les formes `carte_capitale` (« Désignez le pays dont la capitale est X »), `carte_site` et `carte_peuple` dans `uafricas_backend/src/services/jeu_derivation.rs`. `carte_peuple` ne retient qu'un peuple déclaré par **un seul** pays et cité dans les langues d'aucun autre ; `reponse_pays_id` = pays du pivot.
+- [X] T038 [US3] Dans `uafricas_frontend/app/pages/admin/activites/revue.vue`, afficher le type de réponse de chaque forme et de chaque candidate, avec un aperçu de la solution (ordre attendu, paires, pays) pour que la revue se fasse sans ouvrir l'épreuve.
+- [X] T039 [US3] Dérouler [quickstart.md, scénario 3](./quickstart.md) : dérivation, trois requêtes SQL d'ambiguïté (aucun résultat), revue, saisie refusée, et le décompte SC-005 (au moins 30 épreuves hors `choix` par module pilote ; Afrolang attendu en dessous).
 
 **Checkpoint** : famille A complète (US1 à US3).
 

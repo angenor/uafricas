@@ -7,7 +7,7 @@
  * membre déconnecté le perd. Les écrans relisent donc toujours le duel.
  */
 import type { MembreLightAPI } from '~/composables/useAmis'
-import type { EpreuveServieAPI } from '~/composables/useJeu'
+import type { EpreuveServieAPI, ReponseJoueur, SolutionAPI } from '~/composables/useJeu'
 
 export type EtatDuel = 'propose' | 'accepte' | 'en_cours' | 'termine' | 'refuse' | 'annule' | 'expire'
 export type IssueDuel = 'victoire' | 'nul' | 'forfait' | 'sans_issue'
@@ -66,15 +66,18 @@ export interface EtatDuelDirectAPI {
   prochaine_at: string | null
   epreuve: EpreuveServieAPI | null
   ma_cle: number | null
+  /** Ma réponse, quel que soit le type (l'ordre et les paires n'ont pas de clé unique). */
+  ma_reponse: ReponseJoueur | null
   /** Booléen seulement : ce que l'autre a répondu n'est jamais servi pendant la question. */
   adversaire_a_repondu: boolean
-  correction: {
-    bonne_cle: number
+  correction: (SolutionAPI & {
     explication: string | null
     lien: string | null
     ma_cle: number | null
     sa_cle: number | null
-  } | null
+    ma_reponse: ReponseJoueur
+    sa_reponse: ReponseJoueur
+  }) | null
   mes_bonnes: number
   ses_bonnes: number
   adversaire_present: boolean
@@ -149,10 +152,12 @@ export const useDuels = () => {
   const etatDirect = (id: string) => appelAuth<EtatDuelDirectAPI>(`/duels/${id}/direct`)
 
   /** POST …/direct/repondre : ne renvoie PAS la correction (elle arrive aux deux à la fois). */
-  const repondreDirect = (id: string, rang: number, cle: number) =>
-    appelAuth<{ enregistre: boolean }>(`/duels/${id}/direct/repondre`, {
-      method: 'POST', body: { rang, cle },
+  const repondreDirect = (id: string, rang: number, reponse: ReponseJoueur | number) => {
+    const corps: ReponseJoueur = typeof reponse === 'number' ? { cle: reponse } : reponse
+    return appelAuth<{ enregistre: boolean }>(`/duels/${id}/direct/repondre`, {
+      method: 'POST', body: { rang, ...corps },
     })
+  }
 
   /** POST …/convertir : un duel direct resté sans réponse rouvert en différé. */
   const convertir = (id: string) =>

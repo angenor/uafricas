@@ -295,6 +295,7 @@ pub fn configurer_routes(cfg: &mut web::ServiceConfig) {
                     .route("/jeu/epreuves", web::post().to(admin::jeu::creer_epreuve))
                     // Les trois littéraux AVANT `/jeu/epreuves/{id}` : actix prend la
                     // première route qui correspond, et `formes` n'est pas un UUID.
+                    .route("/jeu/medias", web::post().to(admin::jeu::deposer_media))
                     .route("/jeu/epreuves/formes", web::get().to(admin::jeu::lister_formes))
                     .route("/jeu/epreuves/derivation", web::post().to(admin::jeu::deriver))
                     .route("/jeu/epreuves/revue", web::post().to(admin::jeu::revue))

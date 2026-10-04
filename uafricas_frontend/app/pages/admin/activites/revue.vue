@@ -13,6 +13,7 @@ import {
   messageErreurAdminJeu,
   type BilanDerivationAPI,
   type BilanRevueAPI,
+  LIBELLES_TYPE_REPONSE,
   type EpreuveAdminAPI,
   type FormeDerivationAPI,
   type ModuleAdminAPI,
@@ -210,6 +211,7 @@ onMounted(rafraichir)
                 <ul class="space-y-1 text-sm">
                   <li v-for="f in groupe.formes" :key="f.forme" class="flex items-baseline justify-between gap-2">
                     <span>{{ f.libelle }}</span>
+                    <span v-if="f.type_reponse !== 'choix'" class="badge badge-outline badge-xs">{{ LIBELLES_TYPE_REPONSE[f.type_reponse] }}</span>
                     <span class="shrink-0 tabular-nums" :class="restantes(f) > 0 ? 'font-bold text-success' : 'text-base-content/50'">
                       {{ restantes(f) > 0 ? `+${restantes(f)}` : 'à jour' }}
                     </span>
@@ -340,16 +342,14 @@ onMounted(rafraichir)
                     alt=""
                     class="mt-2 h-16 rounded border border-base-300"
                   >
-                  <ul class="mt-2 flex flex-wrap gap-2">
-                    <li
-                      v-for="(proposition, index) in e.propositions"
-                      :key="index"
-                      class="badge"
-                      :class="index + 1 === e.bonne_reponse ? 'badge-success' : 'badge-ghost'"
-                    >
-                      {{ proposition }}
-                    </li>
-                  </ul>
+                  <AdminJeuApercuSolution
+                    :type-reponse="e.type_reponse"
+                    :propositions="e.propositions"
+                    :bonne-reponse="e.bonne_reponse"
+                    :pays-nom="e.reponse_pays_nom"
+                    :elements="e.elements_attendus"
+                    :paires="e.paires_attendues"
+                  />
                   <p v-if="e.explication" class="mt-2 text-sm text-base-content/70">{{ e.explication }}</p>
                 </div>
                 <div class="flex shrink-0 flex-col gap-1">

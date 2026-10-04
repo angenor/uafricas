@@ -22,7 +22,7 @@ use crate::jwt;
 use crate::models::jeu::{
     CreerPartieRequest, HistoriqueParties, MaSaison, ModuleJeu, MonJeu, PageQueryParams,
     PartieHistorique, PartieResponse, PartieRow, PaysRattachement, RangRequest, ReglesJeu,
-    ReponseBilan, RepondreRequest, ScoreParModule, SignalerEpreuveRequest, MOTIFS_SIGNALEMENT,
+    ReponseBilan, ReponseJoueur, RepondreRequest, ScoreParModule, SignalerEpreuveRequest, MOTIFS_SIGNALEMENT,
     PARTIE_COLONNES,
 };
 use crate::services::jeu::{self as moteur, SERVABLE_SQL};
@@ -338,7 +338,7 @@ pub async fn partie_repondre(
     let mut tx = pool.begin().await?;
     let mut partie = charger_partie_verrouillee(&mut tx, path.into_inner(), utilisateur_id).await?;
     let (correction, vient_de_finir) =
-        moteur::repondre(&mut tx, &mut partie, &regles, body.rang, body.cle, None).await?;
+        moteur::repondre(&mut tx, &mut partie, &regles, body.rang, &body.reponse, None).await?;
     tx.commit().await?;
 
     if vient_de_finir {
@@ -366,7 +366,10 @@ pub async fn partie_injouable(
     let mut tx = pool.begin().await?;
     let mut partie = charger_partie_verrouillee(&mut tx, path.into_inner(), utilisateur_id).await?;
     let (correction, vient_de_finir) =
-        moteur::repondre(&mut tx, &mut partie, &regles, body.rang, None, Some("injouable")).await?;
+        moteur::repondre(
+            &mut tx, &mut partie, &regles, body.rang, &ReponseJoueur::default(), Some("injouable"),
+        )
+        .await?;
     tx.commit().await?;
 
     if vient_de_finir {

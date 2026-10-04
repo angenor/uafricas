@@ -47,6 +47,8 @@ enum Distracteurs {
     PaysAfricains,
     /// Vrai ou faux : deux propositions fixes, aucun tirage.
     VraiOuFaux,
+    /// Carte, ordre, paires : pas de mauvaises réponses à tirer.
+    Aucun,
     /// Calculées par la requête de la forme, source par source (colonne
     /// `distracteurs`), quand « mauvaise réponse » dépend de la source : un pays
     /// MOINS peuplé, un pays dont la langue officielle n'est PAS celle demandée…
@@ -56,6 +58,8 @@ enum Distracteurs {
 pub struct Forme {
     pub code: &'static str,
     pub module: &'static str,
+    /// `choix`, `carte`, `ordre` ou `paires` (feature 014).
+    pub type_reponse: &'static str,
     pub type_source: &'static str,
     pub libelle: &'static str,
     /// `image` quand l'énoncé porte un média (le drapeau).
@@ -102,6 +106,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "capitale",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "fiche_pays",
         libelle: "Capitale d'un pays",
         media_type: None,
@@ -116,6 +121,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "pays_de_capitale",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "fiche_pays",
         libelle: "Pays d'une capitale",
         media_type: None,
@@ -130,6 +136,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "monnaie",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "fiche_pays",
         libelle: "Monnaie d'un pays",
         media_type: None,
@@ -144,6 +151,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "drapeau",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "fiche_pays",
         libelle: "Pays d'un drapeau",
         media_type: Some("image"),
@@ -160,6 +168,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "devise_nationale",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "fiche_pays",
         libelle: "Devise nationale d'un pays",
         media_type: None,
@@ -179,6 +188,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "pays_de_devise",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "fiche_pays",
         libelle: "Pays d'une devise nationale",
         media_type: None,
@@ -203,6 +213,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "indicatif_telephonique",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "fiche_pays",
         libelle: "Indicatif téléphonique d'un pays",
         media_type: None,
@@ -219,6 +230,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "plus_peuple",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "fiche_pays",
         libelle: "Le pays le plus peuplé",
         media_type: None,
@@ -244,6 +256,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "plus_vaste",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "fiche_pays",
         libelle: "Le pays le plus vaste",
         media_type: None,
@@ -271,6 +284,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "pays_de_langue_officielle",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "fiche_pays",
         libelle: "Pays d'une langue officielle",
         media_type: None,
@@ -299,6 +313,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "pays_du_site",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "site_touristique",
         libelle: "Pays d'un site touristique",
         media_type: None,
@@ -313,6 +328,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "pays_de_recette",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "recette_culinaire",
         libelle: "Pays d'une recette",
         media_type: None,
@@ -327,6 +343,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "pays_de_personnalite",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "personnalite_connue",
         libelle: "Pays d'une personnalité",
         media_type: None,
@@ -344,6 +361,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "pays_du_peuple",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "groupe_ethnique",
         libelle: "Pays d'un peuple",
         media_type: None,
@@ -374,6 +392,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "domaine_de_personnalite",
         module: "afripulse",
+        type_reponse: "choix",
         type_source: "personnalite_connue",
         libelle: "Domaine d'une personnalité",
         media_type: None,
@@ -397,12 +416,57 @@ pub const FORMES: &[Forme] = &[
                WHERE o.deleted_at IS NULL AND o.suspendu = FALSE
                  AND fp.bloquee = FALSE AND LOWER(p.code_iso2) = ANY($1)",
     },
+    // La photo EST l'énoncé : ni le nom du plat ni celui du site n'y figurent.
+    // L'image est COPIÉE dans `uploads/jeu/images/` à la dérivation (D4).
+    Forme {
+        code: "photo_recette",
+        module: "afripulse",
+        type_reponse: "choix",
+        type_source: "recette_culinaire",
+        libelle: "Pays d'un plat, d'après sa photo",
+        media_type: Some("image"),
+        distracteurs: Distracteurs::PaysAfricains,
+        sql: "SELECT o.id AS source_id,
+                     'De quel pays vient ce plat ?' AS enonce,
+                     p.nom AS bonne,
+                     o.titre || ', un plat de ce pays : ' || p.nom || '.'
+                       || COALESCE(' ' || NULLIF(btrim(left(o.histoire, 300)), ''), '') AS explication,
+                     btrim(o.images[1]) AS media_url, p.id AS pays_id
+                FROM country_profile.recette_culinaire o
+                JOIN country_profile.fiche_pays fp ON fp.id = o.fiche_pays_id
+                JOIN shared.pays p ON p.id = fp.pays_id
+               WHERE o.deleted_at IS NULL AND o.suspendu = FALSE
+                 AND fp.bloquee = FALSE AND LOWER(p.code_iso2) = ANY($1)
+                 AND btrim(COALESCE(o.images[1], '')) <> ''",
+    },
+    Forme {
+        code: "photo_site",
+        module: "afripulse",
+        type_reponse: "choix",
+        type_source: "site_touristique",
+        libelle: "Pays d'un site, d'après sa photo",
+        media_type: Some("image"),
+        distracteurs: Distracteurs::PaysAfricains,
+        sql: "SELECT o.id AS source_id,
+                     'Dans quel pays se trouve ce site ?' AS enonce,
+                     p.nom AS bonne,
+                     o.nom || ' se trouve dans ce pays : ' || p.nom || '.'
+                       || COALESCE(' ' || NULLIF(btrim(left(o.description, 300)), ''), '') AS explication,
+                     btrim(o.image_url) AS media_url, p.id AS pays_id
+                FROM country_profile.site_touristique o
+                JOIN country_profile.fiche_pays fp ON fp.id = o.fiche_pays_id
+                JOIN shared.pays p ON p.id = fp.pays_id
+               WHERE o.deleted_at IS NULL AND o.suspendu = FALSE
+                 AND fp.bloquee = FALSE AND LOWER(p.code_iso2) = ANY($1)
+                 AND btrim(COALESCE(o.image_url, '')) <> ''",
+    },
     // ── Codimoi ──────────────────────────────────────────────────────────────
     // Le proverbe sans pays est le cas courant en base (le formulaire ne
     // l'exige pas) : cette forme ne produit que ce que les membres ont renseigné.
     Forme {
         code: "pays_du_proverbe",
         module: "codimoi",
+        type_reponse: "choix",
         type_source: "codimoi",
         libelle: "Pays d'un proverbe",
         media_type: None,
@@ -421,6 +485,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "auteur_de_citation",
         module: "codimoi",
+        type_reponse: "choix",
         type_source: "codimoi",
         libelle: "Auteur d'une citation",
         media_type: None,
@@ -441,6 +506,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "sens_du_proverbe",
         module: "codimoi",
+        type_reponse: "choix",
         type_source: "codimoi",
         libelle: "Sens d'un proverbe",
         media_type: None,
@@ -462,6 +528,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "mot_manquant",
         module: "codimoi",
+        type_reponse: "choix",
         type_source: "codimoi",
         libelle: "Mot manquant d'un proverbe ou d'une citation",
         media_type: None,
@@ -490,6 +557,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "vrai_ou_faux",
         module: "factcheck",
+        type_reponse: "choix",
         type_source: "factcheck",
         libelle: "Idée reçue : vrai ou faux",
         media_type: None,
@@ -513,6 +581,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "affirmation_vraie",
         module: "factcheck",
+        type_reponse: "choix",
         type_source: "factcheck",
         libelle: "Laquelle de ces affirmations est vraie ?",
         media_type: None,
@@ -536,6 +605,7 @@ pub const FORMES: &[Forme] = &[
     Forme {
         code: "idee_recue",
         module: "factcheck",
+        type_reponse: "choix",
         type_source: "factcheck",
         libelle: "Laquelle de ces affirmations est une idée reçue ?",
         media_type: None,
@@ -556,6 +626,321 @@ pub const FORMES: &[Forme] = &[
                  AND btrim(COALESCE(f.prejuge_titre, '')) <> ''
                  AND $1::text[] IS NOT NULL",
     },
+    // ══ Feature 014 : carte, ordre, paires ════════════════════════════════════
+    // Pour l'ordre et les paires, la requête rend les éléments DANS L'ORDRE
+    // ATTENDU ; c'est `deriver_forme` qui les mélange avant d'écrire (PC4).
+    //
+    // Ordre : le pivot et trois autres pays, chacun à moins de 85 % du
+    // précédent — deux valeurs trop proches ne se départagent pas sans doute.
+    Forme {
+        code: "ordre_population",
+        module: "afripulse",
+        type_reponse: "ordre",
+        type_source: "fiche_pays",
+        libelle: "Classer des pays par population",
+        media_type: None,
+        distracteurs: Distracteurs::Aucun,
+        sql: "SELECT fp.id AS source_id,
+                     'Classez ces pays du plus peuplé au moins peuplé.' AS enonce,
+                     p.nom AS bonne,
+                     'Populations : ' || p.nom || ' (' || jeu.fmt_habitants(fp.population) || ') ; '
+                       || x1.nom || ' (' || jeu.fmt_habitants(x1.v) || ') ; '
+                       || x2.nom || ' (' || jeu.fmt_habitants(x2.v) || ') ; '
+                       || x3.nom || ' (' || jeu.fmt_habitants(x3.v) || ').' AS explication,
+                     NULL::text AS media_url, p.id AS pays_id,
+                     ARRAY[p.nom, x1.nom, x2.nom, x3.nom] AS elements,
+                     ARRAY[jeu.fmt_habitants(fp.population), jeu.fmt_habitants(x1.v),
+                           jeu.fmt_habitants(x2.v), jeu.fmt_habitants(x3.v)] AS valeurs_ordre
+                FROM country_profile.fiche_pays fp
+                JOIN shared.pays p ON p.id = fp.pays_id
+          CROSS JOIN LATERAL (SELECT p2.nom, f2.population AS v FROM country_profile.fiche_pays f2
+                                JOIN shared.pays p2 ON p2.id = f2.pays_id
+                               WHERE f2.bloquee = FALSE AND LOWER(p2.code_iso2) = ANY($1)
+                                 AND f2.population > 0 AND f2.population < fp.population * 0.85
+                               ORDER BY random() LIMIT 1) x1
+          CROSS JOIN LATERAL (SELECT p2.nom, f2.population AS v FROM country_profile.fiche_pays f2
+                                JOIN shared.pays p2 ON p2.id = f2.pays_id
+                               WHERE f2.bloquee = FALSE AND LOWER(p2.code_iso2) = ANY($1)
+                                 AND f2.population > 0 AND f2.population < x1.v * 0.85
+                               ORDER BY random() LIMIT 1) x2
+          CROSS JOIN LATERAL (SELECT p2.nom, f2.population AS v FROM country_profile.fiche_pays f2
+                                JOIN shared.pays p2 ON p2.id = f2.pays_id
+                               WHERE f2.bloquee = FALSE AND LOWER(p2.code_iso2) = ANY($1)
+                                 AND f2.population > 0 AND f2.population < x2.v * 0.85
+                               ORDER BY random() LIMIT 1) x3
+               WHERE fp.bloquee = FALSE AND LOWER(p.code_iso2) = ANY($1) AND fp.population > 0",
+    },
+    Forme {
+        code: "ordre_superficie",
+        module: "afripulse",
+        type_reponse: "ordre",
+        type_source: "fiche_pays",
+        libelle: "Classer des pays par superficie",
+        media_type: None,
+        distracteurs: Distracteurs::Aucun,
+        sql: "SELECT fp.id AS source_id,
+                     'Classez ces pays du plus vaste au moins vaste.' AS enonce,
+                     p.nom AS bonne,
+                     'Superficies : ' || p.nom || ' (' || jeu.fmt_km2(fp.superficie_km2) || ') ; '
+                       || x1.nom || ' (' || jeu.fmt_km2(x1.v) || ') ; '
+                       || x2.nom || ' (' || jeu.fmt_km2(x2.v) || ') ; '
+                       || x3.nom || ' (' || jeu.fmt_km2(x3.v) || ').' AS explication,
+                     NULL::text AS media_url, p.id AS pays_id,
+                     ARRAY[p.nom, x1.nom, x2.nom, x3.nom] AS elements,
+                     ARRAY[jeu.fmt_km2(fp.superficie_km2), jeu.fmt_km2(x1.v),
+                           jeu.fmt_km2(x2.v), jeu.fmt_km2(x3.v)] AS valeurs_ordre
+                FROM country_profile.fiche_pays fp
+                JOIN shared.pays p ON p.id = fp.pays_id
+          CROSS JOIN LATERAL (SELECT p2.nom, f2.superficie_km2 AS v FROM country_profile.fiche_pays f2
+                                JOIN shared.pays p2 ON p2.id = f2.pays_id
+                               WHERE f2.bloquee = FALSE AND LOWER(p2.code_iso2) = ANY($1)
+                                 AND f2.superficie_km2 > 0 AND f2.superficie_km2 < fp.superficie_km2 * 0.85
+                               ORDER BY random() LIMIT 1) x1
+          CROSS JOIN LATERAL (SELECT p2.nom, f2.superficie_km2 AS v FROM country_profile.fiche_pays f2
+                                JOIN shared.pays p2 ON p2.id = f2.pays_id
+                               WHERE f2.bloquee = FALSE AND LOWER(p2.code_iso2) = ANY($1)
+                                 AND f2.superficie_km2 > 0 AND f2.superficie_km2 < x1.v * 0.85
+                               ORDER BY random() LIMIT 1) x2
+          CROSS JOIN LATERAL (SELECT p2.nom, f2.superficie_km2 AS v FROM country_profile.fiche_pays f2
+                                JOIN shared.pays p2 ON p2.id = f2.pays_id
+                               WHERE f2.bloquee = FALSE AND LOWER(p2.code_iso2) = ANY($1)
+                                 AND f2.superficie_km2 > 0 AND f2.superficie_km2 < x2.v * 0.85
+                               ORDER BY random() LIMIT 1) x3
+               WHERE fp.bloquee = FALSE AND LOWER(p.code_iso2) = ANY($1) AND fp.superficie_km2 > 0",
+    },
+    // Paires : le pivot et trois autres pays ; `droite[i]` va avec `elements[i]`.
+    Forme {
+        code: "paires_capitales",
+        module: "afripulse",
+        type_reponse: "paires",
+        type_source: "fiche_pays",
+        libelle: "Associer des pays à leur capitale",
+        media_type: None,
+        distracteurs: Distracteurs::Aucun,
+        sql: "SELECT fp.id AS source_id,
+                     'Associez chaque pays à sa capitale.' AS enonce,
+                     p.nom AS bonne,
+                     p.nom || ' : ' || p.capitale || ' ; ' || o.detail || '.' AS explication,
+                     NULL::text AS media_url, p.id AS pays_id,
+                     ARRAY[p.nom] || o.noms AS elements,
+                     ARRAY[p.capitale] || o.capitales AS droite
+                FROM country_profile.fiche_pays fp
+                JOIN shared.pays p ON p.id = fp.pays_id
+          CROSS JOIN LATERAL (
+                     SELECT array_agg(x.nom) AS noms, array_agg(x.capitale) AS capitales,
+                            string_agg(x.nom || ' : ' || x.capitale, ' ; ') AS detail
+                       FROM (SELECT p2.nom, btrim(p2.capitale) AS capitale
+                               FROM country_profile.fiche_pays f2
+                               JOIN shared.pays p2 ON p2.id = f2.pays_id
+                              WHERE f2.bloquee = FALSE AND LOWER(p2.code_iso2) = ANY($1)
+                                AND f2.id <> fp.id AND btrim(COALESCE(p2.capitale, '')) <> ''
+                                AND lower(btrim(p2.capitale)) <> lower(btrim(p.capitale))
+                              ORDER BY random() LIMIT 3) x) o
+               WHERE fp.bloquee = FALSE AND LOWER(p.code_iso2) = ANY($1)
+                 AND btrim(COALESCE(p.capitale, '')) <> '' AND cardinality(o.noms) = 3",
+    },
+    // Quatre monnaies TOUTES distinctes : deux pays en franc CFA ne sont jamais
+    // réunis, la paire serait ambiguë.
+    Forme {
+        code: "paires_monnaies",
+        module: "afripulse",
+        type_reponse: "paires",
+        type_source: "fiche_pays",
+        libelle: "Associer des pays à leur monnaie",
+        media_type: None,
+        distracteurs: Distracteurs::Aucun,
+        sql: "SELECT fp.id AS source_id,
+                     'Associez chaque pays à sa monnaie.' AS enonce,
+                     p.nom AS bonne,
+                     p.nom || ' : ' || btrim(fp.monnaie) || ' ; ' || o.detail || '.' AS explication,
+                     NULL::text AS media_url, p.id AS pays_id,
+                     ARRAY[p.nom] || o.noms AS elements,
+                     ARRAY[btrim(fp.monnaie)] || o.monnaies AS droite
+                FROM country_profile.fiche_pays fp
+                JOIN shared.pays p ON p.id = fp.pays_id
+          CROSS JOIN LATERAL (
+                     SELECT array_agg(y.nom) AS noms, array_agg(y.monnaie) AS monnaies,
+                            string_agg(y.nom || ' : ' || y.monnaie, ' ; ') AS detail
+                       FROM (SELECT * FROM (
+                               SELECT DISTINCT ON (lower(btrim(f2.monnaie))) p2.nom, btrim(f2.monnaie) AS monnaie
+                                 FROM country_profile.fiche_pays f2
+                                 JOIN shared.pays p2 ON p2.id = f2.pays_id
+                                WHERE f2.bloquee = FALSE AND LOWER(p2.code_iso2) = ANY($1)
+                                  AND f2.id <> fp.id AND btrim(COALESCE(f2.monnaie, '')) <> ''
+                                  AND lower(btrim(f2.monnaie)) <> lower(btrim(fp.monnaie))
+                                ORDER BY lower(btrim(f2.monnaie)), random()) d
+                              ORDER BY random() LIMIT 3) y) o
+               WHERE fp.bloquee = FALSE AND LOWER(p.code_iso2) = ANY($1)
+                 AND btrim(COALESCE(fp.monnaie, '')) <> '' AND cardinality(o.noms) = 3",
+    },
+    // Carte : la réponse est un pays, et un seul.
+    Forme {
+        code: "carte_capitale",
+        module: "afripulse",
+        type_reponse: "carte",
+        type_source: "fiche_pays",
+        libelle: "Désigner sur la carte le pays d'une capitale",
+        media_type: None,
+        distracteurs: Distracteurs::Aucun,
+        sql: "SELECT fp.id AS source_id,
+                     'Désignez sur la carte le pays dont la capitale est ' || btrim(p.capitale) || '.' AS enonce,
+                     p.nom AS bonne,
+                     btrim(p.capitale) || ' est la capitale de ce pays : ' || p.nom || '.' AS explication,
+                     NULL::text AS media_url, p.id AS pays_id, p.id AS reponse_pays_id
+                FROM country_profile.fiche_pays fp
+                JOIN shared.pays p ON p.id = fp.pays_id
+               WHERE fp.bloquee = FALSE AND LOWER(p.code_iso2) = ANY($1)
+                 AND btrim(COALESCE(p.capitale, '')) <> ''",
+    },
+    Forme {
+        code: "carte_site",
+        module: "afripulse",
+        type_reponse: "carte",
+        type_source: "site_touristique",
+        libelle: "Désigner sur la carte le pays d'un site",
+        media_type: None,
+        distracteurs: Distracteurs::Aucun,
+        sql: "SELECT o.id AS source_id,
+                     'Désignez sur la carte le pays où se trouve ce site : ' || o.nom || '.' AS enonce,
+                     p.nom AS bonne,
+                     COALESCE(NULLIF(btrim(left(o.description, 400)), ''),
+                              o.nom || ' se trouve dans ce pays : ' || p.nom || '.') AS explication,
+                     NULL::text AS media_url, p.id AS pays_id, p.id AS reponse_pays_id
+                FROM country_profile.site_touristique o
+                JOIN country_profile.fiche_pays fp ON fp.id = o.fiche_pays_id
+                JOIN shared.pays p ON p.id = fp.pays_id
+               WHERE o.deleted_at IS NULL AND o.suspendu = FALSE
+                 AND fp.bloquee = FALSE AND LOWER(p.code_iso2) = ANY($1)",
+    },
+    // Un peuple partagé par plusieurs pays n'a pas de réponse unique : seuls
+    // ceux qu'aucun autre pays ne déclare ni ne cite dans ses langues.
+    Forme {
+        code: "carte_peuple",
+        module: "afripulse",
+        type_reponse: "carte",
+        type_source: "groupe_ethnique",
+        libelle: "Désigner sur la carte le pays d'un peuple",
+        media_type: None,
+        distracteurs: Distracteurs::Aucun,
+        sql: "SELECT ge.id AS source_id,
+                     'Désignez sur la carte le pays où vivent les ' || btrim(ge.nom) || '.' AS enonce,
+                     p.nom AS bonne,
+                     COALESCE(NULLIF(btrim(left(ge.description, 400)), ''),
+                              'Les ' || btrim(ge.nom) || ' comptent parmi les peuples de ce pays : ' || p.nom || '.') AS explication,
+                     NULL::text AS media_url, p.id AS pays_id, p.id AS reponse_pays_id
+                FROM country_profile.groupe_ethnique ge
+                JOIN country_profile.fiche_pays fp ON fp.id = ge.fiche_pays_id
+                JOIN shared.pays p ON p.id = fp.pays_id
+               WHERE fp.bloquee = FALSE AND LOWER(p.code_iso2) = ANY($1)
+                 AND length(btrim(ge.nom)) >= 3
+                 AND NOT EXISTS (
+                     SELECT 1 FROM country_profile.fiche_pays f2
+                      WHERE f2.id <> fp.id
+                        AND (EXISTS (SELECT 1 FROM country_profile.groupe_ethnique g2
+                                      WHERE g2.fiche_pays_id = f2.id
+                                        AND lower(btrim(g2.nom)) = lower(btrim(ge.nom)))
+                             OR strpos(lower(concat_ws(' ', f2.langue_officielle, f2.langues_populaires)),
+                                       lower(btrim(ge.nom))) > 0))",
+    },
+    // Codimoi : quatre proverbes de quatre pays DIFFÉRENTS, sinon deux pays
+    // identiques à droite rendraient la paire ambiguë.
+    Forme {
+        code: "paires_proverbes",
+        module: "codimoi",
+        type_reponse: "paires",
+        type_source: "codimoi",
+        libelle: "Associer des proverbes à leur pays",
+        media_type: None,
+        distracteurs: Distracteurs::Aucun,
+        sql: "SELECT c.id AS source_id,
+                     'Associez chaque proverbe à son pays.' AS enonce,
+                     p.nom AS bonne,
+                     '« ' || btrim(c.contenu) || ' » : ' || p.nom || ' ; ' || o.detail || '.' AS explication,
+                     NULL::text AS media_url, c.pays_id AS pays_id,
+                     ARRAY[btrim(c.contenu)] || o.textes AS elements,
+                     ARRAY[p.nom] || o.pays AS droite
+                FROM culture.codimoi c
+                JOIN shared.pays p ON p.id = c.pays_id
+          CROSS JOIN LATERAL (
+                     SELECT array_agg(y.contenu) AS textes, array_agg(y.nom) AS pays,
+                            string_agg('« ' || y.contenu || ' » : ' || y.nom, ' ; ') AS detail
+                       FROM (SELECT * FROM (
+                               SELECT DISTINCT ON (c2.pays_id) btrim(c2.contenu) AS contenu, p2.nom
+                                 FROM culture.codimoi c2
+                                 JOIN shared.pays p2 ON p2.id = c2.pays_id
+                                WHERE c2.etat = 'publie' AND c2.deleted_at IS NULL
+                                  AND c2.type = 'proverbe_adage' AND c2.pays_id <> c.pays_id
+                                  AND LOWER(p2.code_iso2) = ANY($1)
+                                ORDER BY c2.pays_id, random()) d
+                              ORDER BY random() LIMIT 3) y) o
+               WHERE c.etat = 'publie' AND c.deleted_at IS NULL AND c.type = 'proverbe_adage'
+                 AND LOWER(p.code_iso2) = ANY($1) AND cardinality(o.textes) = 3",
+    },
+    Forme {
+        code: "paires_citations",
+        module: "codimoi",
+        type_reponse: "paires",
+        type_source: "codimoi",
+        libelle: "Associer des citations à leur auteur",
+        media_type: None,
+        distracteurs: Distracteurs::Aucun,
+        sql: "SELECT c.id AS source_id,
+                     'Associez chaque citation à son auteur.' AS enonce,
+                     btrim(c.nom_auteur_originel) AS bonne,
+                     '« ' || btrim(c.contenu) || ' » : ' || btrim(c.nom_auteur_originel) || ' ; ' || o.detail || '.' AS explication,
+                     NULL::text AS media_url, c.pays_id AS pays_id,
+                     ARRAY[btrim(c.contenu)] || o.textes AS elements,
+                     ARRAY[btrim(c.nom_auteur_originel)] || o.auteurs AS droite
+                FROM culture.codimoi c
+          CROSS JOIN LATERAL (
+                     SELECT array_agg(y.contenu) AS textes, array_agg(y.auteur) AS auteurs,
+                            string_agg('« ' || y.contenu || ' » : ' || y.auteur, ' ; ') AS detail
+                       FROM (SELECT * FROM (
+                               SELECT DISTINCT ON (lower(btrim(c2.nom_auteur_originel)))
+                                      btrim(c2.contenu) AS contenu, btrim(c2.nom_auteur_originel) AS auteur
+                                 FROM culture.codimoi c2
+                                WHERE c2.etat = 'publie' AND c2.deleted_at IS NULL AND c2.type = 'citation'
+                                  AND btrim(COALESCE(c2.nom_auteur_originel, '')) <> ''
+                                  AND lower(btrim(c2.nom_auteur_originel)) <> lower(btrim(c.nom_auteur_originel))
+                                ORDER BY lower(btrim(c2.nom_auteur_originel)), random()) d
+                              ORDER BY random() LIMIT 3) y) o
+               WHERE c.etat = 'publie' AND c.deleted_at IS NULL AND c.type = 'citation'
+                 AND btrim(COALESCE(c.nom_auteur_originel, '')) <> ''
+                 AND cardinality(o.textes) = 3 AND $1::text[] IS NOT NULL",
+    },
+    // FactCheck : chaque idée reçue avec SA correction (la réalité établie).
+    Forme {
+        code: "paires_idees_recues",
+        module: "factcheck",
+        type_reponse: "paires",
+        type_source: "factcheck",
+        libelle: "Associer des idées reçues à leur correction",
+        media_type: None,
+        distracteurs: Distracteurs::Aucun,
+        sql: "SELECT f.id AS source_id,
+                     'Associez chaque idée reçue à ce qu''il en est réellement.' AS enonce,
+                     btrim(f.realite_titre) AS bonne,
+                     'Chaque idée reçue et sa réalité : « ' || btrim(f.prejuge_titre) || ' » → '
+                       || btrim(f.realite_titre) || ' ; ' || o.detail || '.' AS explication,
+                     NULL::text AS media_url, f.pays_id AS pays_id,
+                     ARRAY[btrim(f.prejuge_titre)] || o.prejuges AS elements,
+                     ARRAY[btrim(f.realite_titre)] || o.realites AS droite
+                FROM governance.factcheck f
+          CROSS JOIN LATERAL (
+                     SELECT array_agg(y.prejuge) AS prejuges, array_agg(y.realite) AS realites,
+                            string_agg('« ' || y.prejuge || ' » → ' || y.realite, ' ; ') AS detail
+                       FROM (SELECT btrim(f2.prejuge_titre) AS prejuge, btrim(f2.realite_titre) AS realite
+                               FROM governance.factcheck f2
+                              WHERE f2.etat = 'publie' AND f2.deleted_at IS NULL AND f2.verdict = 'faux'
+                                AND f2.id <> f.id
+                                AND btrim(COALESCE(f2.prejuge_titre, '')) <> ''
+                                AND btrim(COALESCE(f2.realite_titre, '')) <> ''
+                              ORDER BY random() LIMIT 3) y) o
+               WHERE f.etat = 'publie' AND f.deleted_at IS NULL AND f.verdict = 'faux'
+                 AND btrim(COALESCE(f.prejuge_titre, '')) <> ''
+                 AND btrim(COALESCE(f.realite_titre, '')) <> ''
+                 AND cardinality(o.prejuges) = 3 AND $1::text[] IS NOT NULL",
+    },
 ];
 
 #[derive(FromRow)]
@@ -569,6 +954,76 @@ struct SourceEligible {
     /// Pour `Distracteurs::Fournis` seulement ; absente des autres requêtes.
     #[sqlx(default)]
     distracteurs: Option<Vec<String>>,
+    /// ordre : les éléments dans l'ordre attendu ; paires : la colonne de gauche.
+    #[sqlx(default)]
+    elements: Option<Vec<String>>,
+    /// ordre : la justification de chaque élément, alignée sur `elements`.
+    #[sqlx(default)]
+    valeurs_ordre: Option<Vec<String>>,
+    /// paires : le correspondant de chaque élément de gauche.
+    #[sqlx(default)]
+    droite: Option<Vec<String>>,
+    /// carte : le pays attendu.
+    #[sqlx(default)]
+    reponse_pays_id: Option<Uuid>,
+}
+
+/// Ce qu'une candidate écrit, selon le type de réponse de sa forme.
+#[derive(Default)]
+struct Contenu {
+    propositions: Vec<String>,
+    bonne_reponse: Option<i16>,
+    solution: Option<Vec<i16>>,
+    appariements: Option<Vec<String>>,
+    valeurs: Option<Vec<String>>,
+    reponse_pays_id: Option<Uuid>,
+}
+
+/// Tout texte distinct, sans tenir compte de la casse : deux éléments égaux
+/// rendraient l'ordre ou les paires ambigus.
+fn tous_distincts(textes: &[String]) -> bool {
+    let mut vus = HashSet::new();
+    textes.iter().all(|t| !t.trim().is_empty() && vus.insert(t.trim().to_lowercase()))
+}
+
+/// Compose le contenu d'une candidate carte, ordre ou paires. `None` : la
+/// source ne donne pas d'épreuve sans ambiguïté.
+fn composer_type(forme: &Forme, source: &SourceEligible) -> Option<Contenu> {
+    use crate::models::admin::jeu::melanger;
+    match forme.type_reponse {
+        "carte" => Some(Contenu { reponse_pays_id: Some(source.reponse_pays_id?), ..Default::default() }),
+        "ordre" => {
+            let elements = source.elements.as_ref()?;
+            if !(3..=6).contains(&elements.len()) || !tous_distincts(elements) {
+                return None;
+            }
+            let (stocke, position) = melanger(elements);
+            let valeurs = source.valeurs_ordre.as_ref().map(|vals| {
+                let mut v = vec![String::new(); vals.len()];
+                for (i, val) in vals.iter().enumerate() {
+                    v[(position[i] - 1) as usize] = val.clone();
+                }
+                v
+            });
+            Some(Contenu { propositions: stocke, solution: Some(position), valeurs, ..Default::default() })
+        }
+        "paires" => {
+            let (gauche, droite) = (source.elements.as_ref()?, source.droite.as_ref()?);
+            if !(3..=5).contains(&gauche.len()) || gauche.len() != droite.len()
+                || !tous_distincts(gauche) || !tous_distincts(droite)
+            {
+                return None;
+            }
+            let (stocke, position) = melanger(droite);
+            Some(Contenu {
+                propositions: gauche.clone(),
+                solution: Some(position),
+                appariements: Some(stocke),
+                ..Default::default()
+            })
+        }
+        _ => None,
+    }
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -578,6 +1033,8 @@ pub struct BilanForme {
     pub creees: i64,
     pub deja_proposees: i64,
     pub sans_distracteurs: i64,
+    /// Sources dont l'image n'a pas pu être copiée (fichier introuvable).
+    pub sans_media: i64,
 }
 
 /// Décompte d'une forme pour l'écran de revue, sans rien écrire.
@@ -585,6 +1042,7 @@ pub struct BilanForme {
 pub struct EtatForme {
     pub forme: &'static str,
     pub module: &'static str,
+    pub type_reponse: &'static str,
     pub libelle: &'static str,
     pub sources_eligibles: i64,
     pub deja_proposees: i64,
@@ -622,12 +1080,48 @@ pub async fn etat_des_formes(pool: &PgPool) -> Result<Vec<EtatForme>, sqlx::Erro
         etats.push(EtatForme {
             forme: forme.code,
             module: forme.module,
+            type_reponse: forme.type_reponse,
             libelle: forme.libelle,
             sources_eligibles: sources.len() as i64,
             deja_proposees: sources.iter().filter(|s| deja.contains(&s.source_id)).count() as i64,
         });
     }
     Ok(etats)
+}
+
+/// Copie l'image d'une source vers `uploads/jeu/images/` et renvoie l'URL de la
+/// copie : l'épreuve POSSÈDE son média (research D4). Remplacer ensuite la photo
+/// d'une recette ne transforme pas une épreuve déjà revue en question sur une
+/// autre image.
+///
+/// Une URL externe (`http…`) est gardée telle quelle : la copier demanderait un
+/// client HTTP, donc une dépendance nouvelle. `None` : fichier local introuvable.
+fn copier_media(upload_dir: &str, url: &str) -> Option<String> {
+    let url = url.trim();
+    if url.starts_with("http://") || url.starts_with("https://") {
+        return Some(url.to_string());
+    }
+    let relatif = url.strip_prefix("/uploads/")?;
+    if relatif.contains("..") {
+        return None;
+    }
+    let source = std::path::Path::new(upload_dir).join(relatif);
+    if !source.is_file() {
+        return None;
+    }
+    let extension = source.extension().and_then(|e| e.to_str()).unwrap_or("jpg").to_lowercase();
+    let nom = format!("{}.{}", Uuid::new_v4(), extension);
+    let dossier = std::path::Path::new(upload_dir).join("jeu/images");
+    std::fs::create_dir_all(&dossier).ok()?;
+    std::fs::copy(&source, dossier.join(&nom)).ok()?;
+    Some(format!("/uploads/jeu/images/{nom}"))
+}
+
+/// Supprime une copie devenue orpheline (insertion refusée par l'unicité).
+fn supprimer_copie(upload_dir: &str, url: &str) {
+    if let Some(relatif) = url.strip_prefix("/uploads/jeu/images/") {
+        let _ = std::fs::remove_file(std::path::Path::new(upload_dir).join("jeu/images").join(relatif));
+    }
 }
 
 /// Tire trois mauvaises réponses distinctes de la bonne et entre elles
@@ -679,7 +1173,11 @@ fn composer_propositions(
 /// Dérive les candidates d'une forme. Rejouable sans doublon : les sources déjà
 /// proposées (acceptées, rejetées ou encore en revue) sont sautées, et
 /// l'insertion reste protégée par l'index unique en cas de course.
-pub async fn deriver_forme(pool: &PgPool, forme: &Forme) -> Result<BilanForme, sqlx::Error> {
+pub async fn deriver_forme(
+    pool: &PgPool,
+    forme: &Forme,
+    upload_dir: &str,
+) -> Result<BilanForme, sqlx::Error> {
     let sources = sources_eligibles(pool, forme).await?;
     let deja = deja_proposees(pool, forme).await?;
 
@@ -691,7 +1189,7 @@ pub async fn deriver_forme(pool: &PgPool, forme: &Forme) -> Result<BilanForme, s
                 .fetch_all(pool)
                 .await?
         }
-        Distracteurs::VraiOuFaux | Distracteurs::Fournis => Vec::new(),
+        Distracteurs::VraiOuFaux | Distracteurs::Fournis | Distracteurs::Aucun => Vec::new(),
     };
 
     let mut bilan = BilanForme { forme: forme.code, libelle: forme.libelle, ..Default::default() };
@@ -701,10 +1199,30 @@ pub async fn deriver_forme(pool: &PgPool, forme: &Forme) -> Result<BilanForme, s
             bilan.deja_proposees += 1;
             continue;
         }
-        let Some((propositions, bonne_reponse)) = composer_propositions(forme, source, &reservoir)
-        else {
+        let contenu = if forme.type_reponse == "choix" {
+            composer_propositions(forme, source, &reservoir).map(|(propositions, bonne)| Contenu {
+                propositions,
+                bonne_reponse: Some(bonne),
+                ..Default::default()
+            })
+        } else {
+            composer_type(forme, source)
+        };
+        let Some(contenu) = contenu else {
             bilan.sans_distracteurs += 1;
             continue;
+        };
+
+        // Une forme à image copie son média ; sans fichier, pas de candidate.
+        let media_url = match (forme.media_type, source.media_url.as_deref()) {
+            (Some(_), Some(url)) => match copier_media(upload_dir, url) {
+                Some(copie) => Some(copie),
+                None => {
+                    bilan.sans_media += 1;
+                    continue;
+                }
+            },
+            _ => None,
         };
 
         // L'empreinte est lue dans la vue au moment de l'insertion : c'est elle
@@ -713,24 +1231,30 @@ pub async fn deriver_forme(pool: &PgPool, forme: &Forme) -> Result<BilanForme, s
             "INSERT INTO jeu.epreuve
                 (module_code, enonce, media_type, media_url, propositions, bonne_reponse,
                  explication, difficulte, pays_id, origine, type_source, source_id, forme,
-                 source_empreinte, etat)
+                 source_empreinte, etat, type_reponse, solution, appariements, valeurs,
+                 reponse_pays_id)
              SELECT $1, $2, $3, $4, $5, $6, $7, 1, $8, 'derivee', $9, $10, $11,
-                    s.empreinte, 'candidate'
+                    s.empreinte, 'candidate', $12, $13, $14, $15, $16
                FROM jeu.v_source s
               WHERE s.type_source = $9 AND s.source_id = $10 AND s.visible
              ON CONFLICT (type_source, source_id, forme) WHERE origine = 'derivee' DO NOTHING",
         )
         .bind(forme.module)
         .bind(&source.enonce)
-        .bind(forme.media_type.filter(|_| source.media_url.is_some()))
-        .bind(source.media_url.as_deref().filter(|_| forme.media_type.is_some()))
-        .bind(&propositions)
-        .bind(bonne_reponse)
+        .bind(forme.media_type.filter(|_| media_url.is_some()))
+        .bind(media_url.as_deref())
+        .bind(&contenu.propositions)
+        .bind(contenu.bonne_reponse)
         .bind(&source.explication)
         .bind(source.pays_id)
         .bind(forme.type_source)
         .bind(source.source_id)
         .bind(forme.code)
+        .bind(forme.type_reponse)
+        .bind(&contenu.solution)
+        .bind(&contenu.appariements)
+        .bind(&contenu.valeurs)
+        .bind(contenu.reponse_pays_id)
         .execute(pool)
         .await?
         .rows_affected();
@@ -739,6 +1263,9 @@ pub async fn deriver_forme(pool: &PgPool, forme: &Forme) -> Result<BilanForme, s
             bilan.creees += 1;
         } else {
             bilan.deja_proposees += 1;
+            if let Some(copie) = media_url.as_deref() {
+                supprimer_copie(upload_dir, copie);
+            }
         }
     }
 

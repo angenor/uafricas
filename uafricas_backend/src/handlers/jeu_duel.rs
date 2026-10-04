@@ -836,6 +836,7 @@ pub async fn etat_direct(
         prochaine_at: None,
         epreuve: None,
         ma_cle: None,
+        ma_reponse: None,
         adversaire_a_repondu: false,
         correction: None,
         mes_bonnes: bonnes(moi),
@@ -852,10 +853,11 @@ pub async fn etat_direct(
         if let Some(manche) = moteur::etat_manche(&mut conn, &duel, &regles).await? {
             etat.manche_fin_at = Some(manche.fin_question);
             if maintenant >= manche.debut {
-                let ma = manche.reponses.iter().find(|r| r.0 == moi);
-                let sa = manche.reponses.iter().find(|r| r.0 == autre);
-                etat.ma_cle = ma.and_then(|r| r.1);
-                etat.adversaire_a_repondu = sa.is_some_and(|r| r.2 != "sans_reponse");
+                let ma = manche.reponses.iter().find(|r| r.utilisateur_id == moi);
+                let sa = manche.reponses.iter().find(|r| r.utilisateur_id == autre);
+                etat.ma_cle = ma.and_then(|r| r.jouee.cle);
+                etat.ma_reponse = ma.filter(|r| r.issue != "sans_reponse").map(|r| r.jouee.clone());
+                etat.adversaire_a_repondu = sa.is_some_and(|r| r.issue != "sans_reponse");
                 etat.epreuve =
                     Some(moteur::servir_stable(&manche.epreuve, graine(id, manche.rang, moi)));
 
@@ -866,7 +868,7 @@ pub async fn etat_direct(
                         cloture + chrono::Duration::seconds(i64::from(regles.pause_revelation_s)),
                     );
                     etat.correction = Some(CorrectionManche {
-                        bonne_cle: manche.epreuve.bonne_reponse,
+                        solution: moteur::solution_de(&mut conn, &manche.epreuve).await?,
                         explication: manche.epreuve.explication.clone(),
                         lien: moteur::lien_source(
                             &mut conn,
@@ -875,7 +877,9 @@ pub async fn etat_direct(
                         )
                         .await?,
                         ma_cle: etat.ma_cle,
-                        sa_cle: sa.and_then(|r| r.1),
+                        sa_cle: sa.and_then(|r| r.jouee.cle),
+                        ma_reponse: ma.map(|r| r.jouee.clone()).unwrap_or_default(),
+                        sa_reponse: sa.map(|r| r.jouee.clone()).unwrap_or_default(),
                     });
                 } else {
                     etat.phase = "question";
@@ -924,7 +928,7 @@ pub async fn repondre_direct(
     .fetch_optional(&mut *tx)
     .await?
     .ok_or_else(|| ApiErreur::Conflit("Votre partie de duel n'existe pas".into()))?;
-    moteur::repondre(&mut tx, &mut partie, &regles, body.rang, Some(body.cle), None).await?;
+    moteur::repondre(&mut tx, &mut partie, &regles, body.rang, &body.reponse, None).await?;
     tx.commit().await?;
 
     // Les deux écrans relisent : celui de l'autre apprend qu'on a répondu, et la

@@ -19,6 +19,7 @@ import {
   type CorrectionAPI,
   type PartieAPI,
   type PresentationAPI,
+  type ReponseJoueur,
 } from '~/composables/useJeu'
 
 definePageMeta({ layout: false, middleware: 'auth' })
@@ -82,14 +83,17 @@ const avancer = async () => {
   }
 }
 
-/** Envoie la réponse. `cle = null` : le temps s'est écoulé. */
-const envoyer = async (cle: number | null) => {
+/**
+ * Envoie la réponse : une clé pour le choix multiple, une réponse complète pour
+ * la carte, l'ordre et les paires. `null` : le temps s'est écoulé.
+ */
+const envoyer = async (reponse: ReponseJoueur | number | null) => {
   if (!presentation.value || correction.value || envoi.value) return
   erreur.value = ''
   envoi.value = true
-  choix.value = cle
+  choix.value = typeof reponse === 'number' ? reponse : null
   try {
-    correction.value = await repondre(id.value, presentation.value.rang, cle)
+    correction.value = await repondre(id.value, presentation.value.rang, reponse)
   }
   catch (e) {
     choix.value = null
@@ -218,7 +222,10 @@ watch(id, initialiser)
             :choix="choix"
             :bonne-cle="correction?.bonne_cle ?? null"
             :verrouillee="envoi || correction != null"
+            :solution="correction"
+            :jouee="correction?.jouee ?? null"
             @choisir="envoyer"
+            @repondre="envoyer"
             @injouable="passerInjouable"
           />
 

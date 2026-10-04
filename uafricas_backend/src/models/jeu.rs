@@ -34,13 +34,19 @@ pub struct ReglesJeu {
     pub duels_comptes_par_paire_jour: i16,
     pub duels_comptes_par_membre_jour: i16,
     pub joueurs_par_pays: i16,
+    /// Temps ajouté aux épreuves « ordre » et « paires » (feature 014).
+    pub majoration_ordre_paires_s: i16,
+    pub prime_concours_participation: i16,
+    /// Trois montants décroissants : 1ʳᵉ, 2ᵉ et 3ᵉ place d'un concours.
+    pub prime_concours_podium: Vec<i16>,
 }
 
 pub const REGLES_COLONNES: &str = "taille_partie, taille_defi_jour, taille_defi_semaine, taille_duel, \
      temps_epreuve_s, score_facile, score_moyen, score_difficile, prime_defi_jour, \
      prime_defi_semaine, prime_duel_victoire, prime_duel_nul, delai_duel_h, delai_direct_min, \
      grace_direct_s, pause_revelation_s, duels_comptes_par_paire_jour, \
-     duels_comptes_par_membre_jour, joueurs_par_pays";
+     duels_comptes_par_membre_jour, joueurs_par_pays, majoration_ordre_paires_s, \
+     prime_concours_participation, prime_concours_podium";
 
 impl ReglesJeu {
     /// Score d'une bonne réponse selon le niveau de difficulté (1 à 3).
@@ -79,15 +85,30 @@ pub struct EpreuveRow {
     pub media_type: Option<String>,
     pub media_url: Option<String>,
     pub propositions: Vec<String>,
-    pub bonne_reponse: i16,
+    /// Renseignée pour le seul type `choix` (feature 014).
+    pub bonne_reponse: Option<i16>,
     pub explication: Option<String>,
     pub difficulte: i16,
     pub type_source: Option<String>,
     pub source_id: Option<Uuid>,
+    /// `choix`, `carte`, `ordre` ou `paires`.
+    pub type_reponse: String,
+    /// ordre : rangs des éléments dans l'ordre attendu ; paires : rang, dans
+    /// `appariements`, du correspondant de chaque élément de gauche.
+    pub solution: Option<Vec<i16>>,
+    /// paires : la colonne de droite, stockée dans un ordre aléatoire.
+    pub appariements: Option<Vec<String>>,
+    /// ordre : justification de chaque élément, montrée à la correction.
+    pub valeurs: Option<Vec<String>>,
+    /// carte : le pays attendu.
+    pub reponse_pays_id: Option<Uuid>,
 }
 
+/// La SEULE liste de colonnes d'une épreuve : toute lecture d'[`EpreuveRow`]
+/// passe par elle, une colonne ajoutée ne peut donc être oubliée nulle part.
 pub const EPREUVE_COLONNES: &str = "e.id, e.module_code, e.enonce, e.media_type, e.media_url, \
-     e.propositions, e.bonne_reponse, e.explication, e.difficulte, e.type_source, e.source_id";
+     e.propositions, e.bonne_reponse, e.explication, e.difficulte, e.type_source, e.source_id, \
+     e.type_reponse, e.solution, e.appariements, e.valeurs, e.reponse_pays_id";
 
 /// Une proposition telle qu'elle est servie : `cle` est son rang d'origine dans
 /// l'épreuve. Il ne révèle rien, le client ne sait pas lequel est le bon.
@@ -98,14 +119,70 @@ pub struct PropositionServie {
 }
 
 /// L'épreuve telle qu'un membre la reçoit AVANT de répondre.
+///
+/// Pour l'ordre et les paires, les clés sont les rangs des éléments dans des
+/// tableaux stockés au HASARD : comme la clé d'une proposition, elles ne
+/// disent rien de la solution (feature 014, research D1).
 #[derive(Debug, Serialize)]
 pub struct EpreuveServie {
     pub id: Uuid,
+    pub type_reponse: String,
     pub enonce: String,
     pub media_type: Option<String>,
     pub media_url: Option<String>,
     pub difficulte: i16,
     pub propositions: Vec<PropositionServie>,
+    /// paires : la colonne de droite, mélangée indépendamment de la gauche.
+    pub appariements: Option<Vec<PropositionServie>>,
+}
+
+/// La réponse d'un membre, quel que soit le type de l'épreuve : UNE seule des
+/// formes est renseignée. Toutes vides : temps écoulé, `sans_reponse`.
+///
+/// Sert aussi, à la correction, à rendre ce qui a été joué.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ReponseJoueur {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cle: Option<i16>,
+    /// ordre : les clés dans l'ordre proposé.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ordre: Option<Vec<i16>>,
+    /// paires : clé de droite associée à chaque clé de gauche, dans l'ordre
+    /// croissant des clés de gauche.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub paires: Option<Vec<i16>>,
+    /// carte : code ISO2 du pays désigné.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pays: Option<String>,
+}
+
+impl ReponseJoueur {
+    pub fn est_vide(&self) -> bool {
+        self.cle.is_none() && self.ordre.is_none() && self.paires.is_none() && self.pays.is_none()
+    }
+}
+
+/// Un pays tel que la correction d'une épreuve « carte » le montre.
+#[derive(Debug, Clone, Serialize)]
+pub struct PaysCorrection {
+    pub iso: String,
+    pub nom: String,
+}
+
+/// La solution complète d'une épreuve, selon son type. Commune à la
+/// correction d'une partie et à celle d'une manche de duel direct.
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct Solution {
+    pub type_reponse: String,
+    /// choix : la clé de la bonne proposition.
+    pub bonne_cle: Option<i16>,
+    /// ordre : clés dans l'ordre attendu ; paires : clé de droite attendue pour
+    /// chaque clé de gauche, dans l'ordre croissant des clés de gauche.
+    pub solution: Option<Vec<i16>>,
+    /// ordre : justification par clé.
+    pub valeurs: Option<std::collections::BTreeMap<i16, String>>,
+    /// carte : le bon pays.
+    pub bon_pays: Option<PaysCorrection>,
 }
 
 /// Ce qu'un membre reçoit APRÈS sa réponse, ou après l'expiration du temps.
@@ -115,8 +192,11 @@ pub struct Correction {
     pub epreuve_id: Uuid,
     /// `bonne`, `mauvaise`, `sans_reponse` ou `injouable`.
     pub issue: String,
-    pub bonne_cle: i16,
+    #[serde(flatten)]
+    pub solution: Solution,
     pub cle_choisie: Option<i16>,
+    /// Ce qui a été joué, quel que soit le type.
+    pub jouee: ReponseJoueur,
     pub explication: Option<String>,
     /// Lien vers le contenu dont l'épreuve est tirée, s'il existe (FR-007).
     pub lien: Option<String>,
@@ -160,10 +240,12 @@ pub struct CreerPartieRequest {
 #[derive(Debug, Deserialize)]
 pub struct RepondreRequest {
     pub rang: i16,
-    /// `null` : le temps s'est écoulé côté client. L'épreuve est alors
-    /// enregistrée sans réponse et sa correction renvoyée, SANS présenter la
-    /// suivante : le membre lit la correction avant que l'horloge ne reparte.
-    pub cle: Option<i16>,
+    /// Une seule forme renseignée. Aucune (`cle: null`) : le temps s'est écoulé
+    /// côté client. L'épreuve est alors enregistrée sans réponse et sa
+    /// correction renvoyée, SANS présenter la suivante : le membre lit la
+    /// correction avant que l'horloge ne reparte.
+    #[serde(flatten)]
+    pub reponse: ReponseJoueur,
 }
 
 #[derive(Debug, Deserialize)]
@@ -622,11 +704,14 @@ pub struct FichePaysJeu {
 
 #[derive(Debug, Serialize)]
 pub struct CorrectionManche {
-    pub bonne_cle: i16,
+    #[serde(flatten)]
+    pub solution: Solution,
     pub explication: Option<String>,
     pub lien: Option<String>,
     pub ma_cle: Option<i16>,
     pub sa_cle: Option<i16>,
+    pub ma_reponse: ReponseJoueur,
+    pub sa_reponse: ReponseJoueur,
 }
 
 /// L'état autoritaire d'un duel direct, tel que le voit l'un des joueurs. Le
@@ -649,6 +734,9 @@ pub struct EtatDuelDirect {
     /// réponse : elle n'arrive qu'avec `correction`, aux deux à la fois.
     pub epreuve: Option<EpreuveServie>,
     pub ma_cle: Option<i16>,
+    /// Ma réponse, quel que soit le type (l'ordre et les paires n'ont pas de clé
+    /// unique : `ma_cle` ne suffit plus à savoir qu'on a répondu).
+    pub ma_reponse: Option<ReponseJoueur>,
     /// Booléen seulement : ce que l'autre a répondu n'est jamais servi pendant
     /// la question, sinon l'un pourrait le souffler à l'autre.
     pub adversaire_a_repondu: bool,
@@ -664,5 +752,6 @@ pub struct EtatDuelDirect {
 #[derive(Debug, Deserialize)]
 pub struct RepondreDirectRequest {
     pub rang: i16,
-    pub cle: i16,
+    #[serde(flatten)]
+    pub reponse: ReponseJoueur,
 }

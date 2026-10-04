@@ -40,7 +40,40 @@
       </p>
     </div>
 
-    <ul class="mt-6 flex flex-col gap-3" role="list">
+    <!-- Feature 014 : les autres façons de répondre. Chacune envoie une réponse
+         complète à la validation, et affiche elle-même sa correction. -->
+    <JeuReponseCarte
+      v-if="epreuve.type_reponse === 'carte'"
+      :key="`carte-${epreuve.id}`"
+      class="mt-6"
+      :verrouillee="verrouillee"
+      :solution="solution"
+      :jouee="jouee"
+      @repondre="$emit('repondre', $event)"
+    />
+    <JeuReponseOrdre
+      v-else-if="epreuve.type_reponse === 'ordre'"
+      :key="`ordre-${epreuve.id}`"
+      class="mt-6"
+      :elements="epreuve.propositions"
+      :verrouillee="verrouillee"
+      :solution="solution"
+      :jouee="jouee"
+      @repondre="$emit('repondre', $event)"
+    />
+    <JeuReponsePaires
+      v-else-if="epreuve.type_reponse === 'paires'"
+      :key="`paires-${epreuve.id}`"
+      class="mt-6"
+      :gauche="epreuve.propositions"
+      :droite="epreuve.appariements ?? []"
+      :verrouillee="verrouillee"
+      :solution="solution"
+      :jouee="jouee"
+      @repondre="$emit('repondre', $event)"
+    />
+
+    <ul v-else class="mt-6 flex flex-col gap-3" role="list">
       <li v-for="proposition in epreuve.propositions" :key="proposition.cle">
         <button
           type="button"
@@ -68,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import type { EpreuveServieAPI } from '~/composables/useJeu'
+import type { EpreuveServieAPI, ReponseJoueur, SolutionAPI } from '~/composables/useJeu'
 
 /**
  * L'épreuve telle qu'elle se joue. Le composant ne connaît la bonne réponse
@@ -83,9 +116,13 @@ const props = defineProps<{
   bonneCle?: number | null
   /** Plus aucun clic : réponse en vol, ou correction affichée. */
   verrouillee?: boolean
+  /** Carte, ordre, paires : la solution complète, après la correction. */
+  solution?: SolutionAPI | null
+  /** Carte, ordre, paires : ce qui a été joué, après la correction. */
+  jouee?: ReponseJoueur | null
 }>()
 
-defineEmits<{ choisir: [cle: number], injouable: [] }>()
+defineEmits<{ choisir: [cle: number], repondre: [reponse: ReponseJoueur], injouable: [] }>()
 
 const mediaEnErreur = ref(false)
 watch(() => props.epreuve.id, () => { mediaEnErreur.value = false })

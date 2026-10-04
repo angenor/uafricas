@@ -130,16 +130,11 @@ onMounted(charger)
           </div>
 
           <p class="font-medium">{{ sujet.enonce }}</p>
-          <ul class="flex flex-wrap gap-2">
-            <li
-              v-for="(proposition, index) in sujet.propositions"
-              :key="index"
-              class="badge"
-              :class="index + 1 === sujet.bonne_reponse ? 'badge-success' : 'badge-ghost'"
-            >
-              {{ proposition }}
-            </li>
-          </ul>
+          <AdminJeuApercuSolution
+            :type-reponse="sujet.type_reponse"
+            :propositions="sujet.propositions"
+            :bonne-reponse="sujet.bonne_reponse"
+          />
 
           <ul class="divide-y divide-base-200 border-t border-base-200">
             <li v-for="s in sujet.signalements" :key="s.id" class="flex flex-wrap items-start gap-3 py-3">

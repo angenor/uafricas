@@ -25,8 +25,8 @@ use uuid::Uuid;
 
 use crate::errors::ApiErreur;
 use crate::models::jeu::{
-    Correction, DefiRow, DuelRow, EpreuveRow, EpreuveServie, PartieDuel, PartieRow, Presentation,
-    PropositionServie, ReglesJeu, DEFI_COLONNES, DUEL_COLONNES, EPREUVE_COLONNES, PARTIE_COLONNES,
+    Correction, DefiRow, DuelRow, EpreuveRow, EpreuveServie, PartieDuel, PartieRow, PaysCorrection,
+    Presentation, PropositionServie, ReglesJeu, ReponseJoueur, Solution, DEFI_COLONNES, DUEL_COLONNES, EPREUVE_COLONNES, PARTIE_COLONNES,
     REGLES_COLONNES,
 };
 use crate::services::engagement;
@@ -227,45 +227,217 @@ async fn charger_epreuve(conn: &mut PgConnection, id: Uuid) -> Result<EpreuveRow
 }
 
 /// Temps accordé à une épreuve, en millisecondes, hors tolérance réseau.
+/// L'ordre et les paires disposent d'un temps majoré : déplacer quatre
+/// éléments demande plus que cliquer une proposition (feature 014, D3).
 fn delai_ms(regles: &ReglesJeu, epreuve: &EpreuveRow) -> i64 {
-    let base = i64::from(regles.temps_epreuve_s) * 1_000;
+    let mut ms = i64::from(regles.temps_epreuve_s) * 1_000;
     if epreuve.media_type.is_some() {
-        base + MARGE_MEDIA_MS
-    } else {
-        base
+        ms += MARGE_MEDIA_MS;
     }
+    if matches!(epreuve.type_reponse.as_str(), "ordre" | "paires") {
+        ms += i64::from(regles.majoration_ordre_paires_s) * 1_000;
+    }
+    ms
 }
 
-/// Mélange les propositions (FR-030). Chacune garde son rang d'origine comme
-/// clé : il ne dit pas laquelle est la bonne.
-fn servir(epreuve: &EpreuveRow) -> EpreuveServie {
-    let mut propositions: Vec<PropositionServie> = epreuve
-        .propositions
+/// Chaque texte avec sa clé : son rang d'origine dans le tableau stocké.
+fn avec_cles(textes: &[String]) -> Vec<PropositionServie> {
+    textes
         .iter()
         .enumerate()
         .map(|(i, texte)| PropositionServie { cle: (i + 1) as i16, texte: texte.clone() })
-        .collect();
-    propositions.shuffle(&mut rand::thread_rng());
+        .collect()
+}
+
+/// Mélange les propositions (FR-030) et, pour les paires, la colonne de droite,
+/// indépendamment. Chaque élément garde son rang d'origine comme clé : comme
+/// les tableaux sont STOCKÉS au hasard, ce rang ne dit rien de la solution.
+fn servir(epreuve: &EpreuveRow) -> EpreuveServie {
+    let mut rng = rand::thread_rng();
+    let mut propositions = avec_cles(&epreuve.propositions);
+    propositions.shuffle(&mut rng);
+    let appariements = epreuve.appariements.as_deref().map(|droite| {
+        let mut v = avec_cles(droite);
+        v.shuffle(&mut rng);
+        v
+    });
 
     EpreuveServie {
         id: epreuve.id,
+        type_reponse: epreuve.type_reponse.clone(),
         enonce: epreuve.enonce.clone(),
         media_type: epreuve.media_type.clone(),
         media_url: epreuve.media_url.clone(),
         difficulte: epreuve.difficulte,
         propositions,
+        appariements,
     }
 }
 
 /// Comme [`servir`], mais avec un ordre STABLE pour une graine donnée : en duel
 /// direct, l'état est relu toutes les trois secondes, un ordre tiré à chaque
-/// lecture ferait danser les propositions sous les yeux du joueur.
+/// lecture ferait danser les propositions sous les yeux du joueur. La colonne
+/// de droite des paires est mélangée avec une graine DÉRIVÉE : avec la même,
+/// les deux colonnes suivraient la même permutation.
 pub fn servir_stable(epreuve: &EpreuveRow, graine: u64) -> EpreuveServie {
     use rand::SeedableRng;
     let mut servie = servir(epreuve);
     servie.propositions.sort_by_key(|p| p.cle);
     servie.propositions.shuffle(&mut rand::rngs::StdRng::seed_from_u64(graine));
+    if let Some(droite) = servie.appariements.as_mut() {
+        droite.sort_by_key(|p| p.cle);
+        droite.shuffle(&mut rand::rngs::StdRng::seed_from_u64(graine ^ 0x9E37_79B9));
+    }
     servie
+}
+
+/// Vrai si `v` contient exactement les clés 1..=n, chacune une fois.
+fn est_permutation(v: &[i16], n: usize) -> bool {
+    if v.len() != n {
+        return false;
+    }
+    let mut vues = vec![false; n];
+    v.iter().all(|&c| {
+        let i = c as usize;
+        c >= 1 && i <= n && !std::mem::replace(&mut vues[i - 1], true)
+    })
+}
+
+/// Corrige une réponse, quel que soit le type de l'épreuve (feature 014, D2).
+/// `pays_id` : le pays désigné d'une épreuve « carte », déjà résolu.
+///
+/// `Ok(None)` : sans réponse. `Err` : une réponse qui n'a pas la forme de
+/// l'épreuve (mauvais type, clé inconnue, ordre qui omet ou répète une clé),
+/// refusée avant toute écriture. Tout ou rien : il n'y a pas de demi-réponse.
+pub fn evaluer(
+    epreuve: &EpreuveRow,
+    reponse: &ReponseJoueur,
+    pays_id: Option<Uuid>,
+) -> Result<Option<bool>, ApiErreur> {
+    if reponse.est_vide() {
+        return Ok(None);
+    }
+    let formes = [reponse.cle.is_some(), reponse.ordre.is_some(), reponse.paires.is_some(),
+                  reponse.pays.is_some()];
+    let autre_forme = || ApiErreur::Validation("Cette réponse ne correspond pas au type de l'épreuve".into());
+    if formes.iter().filter(|f| **f).count() > 1 {
+        return Err(autre_forme());
+    }
+    let n = epreuve.propositions.len();
+
+    match epreuve.type_reponse.as_str() {
+        "choix" => {
+            let c = reponse.cle.ok_or_else(autre_forme)?;
+            if c < 1 || c as usize > n {
+                return Err(ApiErreur::Validation("Proposition inconnue".into()));
+            }
+            Ok(Some(Some(c) == epreuve.bonne_reponse))
+        }
+        "ordre" => {
+            let ordre = reponse.ordre.as_deref().ok_or_else(autre_forme)?;
+            if !est_permutation(ordre, n) {
+                return Err(ApiErreur::Validation(
+                    "L'ordre doit reprendre chaque élément une fois et une seule".into(),
+                ));
+            }
+            Ok(Some(epreuve.solution.as_deref() == Some(ordre)))
+        }
+        "paires" => {
+            let paires = reponse.paires.as_deref().ok_or_else(autre_forme)?;
+            let droite = epreuve.appariements.as_ref().map_or(0, Vec::len);
+            if paires.len() != n || !est_permutation(paires, droite) {
+                return Err(ApiErreur::Validation(
+                    "Chaque élément doit être associé à un correspondant différent".into(),
+                ));
+            }
+            Ok(Some(epreuve.solution.as_deref() == Some(paires)))
+        }
+        "carte" => {
+            reponse.pays.as_ref().ok_or_else(autre_forme)?;
+            let id = pays_id
+                .ok_or_else(|| ApiErreur::Validation("Pays inconnu : désignez un pays d'Afrique".into()))?;
+            Ok(Some(Some(id) == epreuve.reponse_pays_id))
+        }
+        _ => Err(autre_forme()),
+    }
+}
+
+/// Résout le code ISO2 d'une réponse « carte » en pays, borné aux 55 pays
+/// d'Afrique. `None` si la réponse n'est pas une carte ; erreur si le code est
+/// inconnu (le pays d'un autre continent n'est pas une réponse possible).
+async fn resoudre_pays_joue(
+    conn: &mut PgConnection,
+    reponse: &ReponseJoueur,
+) -> Result<Option<Uuid>, ApiErreur> {
+    let Some(iso) = reponse.pays.as_deref() else {
+        return Ok(None);
+    };
+    let codes: Vec<String> = crate::constants::afripulse_pays_autorises::PAYS_AFRICAINS_ISO2
+        .iter()
+        .map(|c| c.to_lowercase())
+        .collect();
+    let id: Option<Uuid> = sqlx::query_scalar(
+        "SELECT id FROM shared.pays WHERE LOWER(code_iso2) = LOWER($1) AND LOWER(code_iso2) = ANY($2)",
+    )
+    .bind(iso.trim())
+    .bind(&codes)
+    .fetch_optional(conn)
+    .await?;
+    id.map(Some)
+        .ok_or_else(|| ApiErreur::Validation("Pays inconnu : désignez un pays d'Afrique".into()))
+}
+
+async fn pays_correction(
+    conn: &mut PgConnection,
+    id: Option<Uuid>,
+) -> Result<Option<PaysCorrection>, sqlx::Error> {
+    let Some(id) = id else {
+        return Ok(None);
+    };
+    let ligne: Option<(Option<String>, String)> =
+        sqlx::query_as("SELECT LOWER(code_iso2), nom FROM shared.pays WHERE id = $1")
+            .bind(id)
+            .fetch_optional(conn)
+            .await?;
+    Ok(ligne.map(|(iso, nom)| PaysCorrection { iso: iso.unwrap_or_default(), nom }))
+}
+
+/// La solution complète d'une épreuve, telle que la correction la montre.
+pub async fn solution_de(
+    conn: &mut PgConnection,
+    epreuve: &EpreuveRow,
+) -> Result<Solution, sqlx::Error> {
+    let valeurs = epreuve.valeurs.as_ref().map(|v| {
+        v.iter().enumerate().map(|(i, t)| ((i + 1) as i16, t.clone())).collect()
+    });
+    Ok(Solution {
+        type_reponse: epreuve.type_reponse.clone(),
+        bonne_cle: epreuve.bonne_reponse,
+        solution: epreuve.solution.clone(),
+        valeurs,
+        bon_pays: pays_correction(conn, epreuve.reponse_pays_id).await?,
+    })
+}
+
+/// Ce qui a été joué, reconstruit depuis ce que `jeu.reponse` a enregistré.
+pub async fn jouee_depuis(
+    conn: &mut PgConnection,
+    epreuve: &EpreuveRow,
+    cle: Option<i16>,
+    detail: Option<Vec<i16>>,
+    pays_id: Option<Uuid>,
+) -> Result<ReponseJoueur, sqlx::Error> {
+    let (ordre, paires) = match epreuve.type_reponse.as_str() {
+        "ordre" => (detail, None),
+        "paires" => (None, detail),
+        _ => (None, None),
+    };
+    Ok(ReponseJoueur {
+        cle,
+        ordre,
+        paires,
+        pays: pays_correction(conn, pays_id).await?.map(|p| p.iso),
+    })
 }
 
 /// Délai d'une épreuve, exposé pour l'état d'une manche directe.
@@ -342,16 +514,18 @@ async fn correction_existante(
     partie: &PartieRow,
     rang: i16,
 ) -> Result<Option<Correction>, ApiErreur> {
-    let ligne: Option<(Uuid, Uuid, Option<i16>, String)> = sqlx::query_as(
-        "SELECT id, epreuve_id, proposition_choisie, issue
-           FROM jeu.reponse WHERE partie_id = $1 AND rang = $2",
-    )
-    .bind(partie.id)
-    .bind(rang)
-    .fetch_optional(&mut *conn)
-    .await?;
+    #[allow(clippy::type_complexity)]
+    let ligne: Option<(Uuid, Uuid, Option<i16>, Option<Vec<i16>>, Option<Uuid>, String)> =
+        sqlx::query_as(
+            "SELECT id, epreuve_id, proposition_choisie, reponse_detail, pays_choisi_id, issue
+               FROM jeu.reponse WHERE partie_id = $1 AND rang = $2",
+        )
+        .bind(partie.id)
+        .bind(rang)
+        .fetch_optional(&mut *conn)
+        .await?;
 
-    let Some((reponse_id, epreuve_id, cle_choisie, issue)) = ligne else {
+    let Some((reponse_id, epreuve_id, cle_choisie, detail, pays_id, issue)) = ligne else {
         return Ok(None);
     };
 
@@ -369,14 +543,17 @@ async fn correction_existante(
 
     let signalable =
         est_signalable(&mut *conn, epreuve_id, partie.utilisateur_id, &issue).await?;
+    let solution = solution_de(&mut *conn, &epreuve).await?;
+    let jouee = jouee_depuis(&mut *conn, &epreuve, cle_choisie, detail, pays_id).await?;
 
     Ok(Some(Correction {
         rang,
         epreuve_id,
         signalable,
         issue,
-        bonne_cle: epreuve.bonne_reponse,
+        solution,
         cle_choisie,
+        jouee,
         explication: epreuve.explication,
         lien,
         score_gagne,
@@ -396,7 +573,7 @@ async fn inscrire_reponse(
     partie: &mut PartieRow,
     regles: &ReglesJeu,
     rang: i16,
-    cle: Option<i16>,
+    reponse: &ReponseJoueur,
     issue_forcee: Option<&str>,
     maintenant: DateTime<Utc>,
 ) -> Result<Correction, ApiErreur> {
@@ -406,11 +583,10 @@ async fn inscrire_reponse(
         .ok_or_else(|| ApiErreur::Validation("Rang hors de la série".into()))?;
     let epreuve = charger_epreuve(&mut *conn, epreuve_id).await?;
 
-    if let Some(c) = cle {
-        if c < 1 || c as usize > epreuve.propositions.len() {
-            return Err(ApiErreur::Validation("Proposition inconnue".into()));
-        }
-    }
+    // La forme de la réponse est contrôlée AVANT le temps : une réponse mal
+    // formée est refusée, pas comptée fausse.
+    let pays_joue = resoudre_pays_joue(&mut *conn, reponse).await?;
+    let juste = evaluer(&epreuve, reponse, pays_joue)?;
 
     let limite = delai_ms(regles, &epreuve);
     let ecoule = partie
@@ -418,25 +594,26 @@ async fn inscrire_reponse(
         .map(|p| (maintenant - p).num_milliseconds())
         .unwrap_or(limite);
 
-    let (issue, cle_retenue): (&str, Option<i16>) = match (issue_forcee, cle) {
-        (Some(forcee), _) => (forcee, None),
-        (None, Some(c)) if ecoule <= limite + TOLERANCE_RESEAU_MS => {
-            if c == epreuve.bonne_reponse {
-                ("bonne", Some(c))
-            } else {
-                ("mauvaise", Some(c))
-            }
+    // Ce qui est enregistré n'est la réponse jouée que si elle compte.
+    let (issue, retenue): (&str, ReponseJoueur) = match (issue_forcee, juste) {
+        (Some(forcee), _) => (forcee, ReponseJoueur::default()),
+        (None, Some(j)) if ecoule <= limite + TOLERANCE_RESEAU_MS => {
+            (if j { "bonne" } else { "mauvaise" }, reponse.clone())
         }
-        _ => ("sans_reponse", None),
+        _ => ("sans_reponse", ReponseJoueur::default()),
     };
+    let cle_retenue = retenue.cle;
+    let detail_retenu = retenue.ordre.clone().or_else(|| retenue.paires.clone());
+    let pays_retenu = if retenue.pays.is_some() { pays_joue } else { None };
     let temps_ms = ecoule.clamp(0, limite) as i32;
 
     // `ON CONFLICT DO NOTHING` sans cible : couvre `uq_reponse_rang` (rejeu du
     // même envoi) ET `uq_reponse_libre` (épreuve déjà jouée en partie libre).
     let reponse_id: Option<Uuid> = sqlx::query_scalar(
         "INSERT INTO jeu.reponse
-            (partie_id, utilisateur_id, epreuve_id, cadre, rang, proposition_choisie, issue, temps_ms)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            (partie_id, utilisateur_id, epreuve_id, cadre, rang, proposition_choisie, issue, temps_ms,
+             reponse_detail, pays_choisi_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          ON CONFLICT DO NOTHING
          RETURNING id",
     )
@@ -448,6 +625,8 @@ async fn inscrire_reponse(
     .bind(cle_retenue)
     .bind(issue)
     .bind(temps_ms)
+    .bind(&detail_retenu)
+    .bind(pays_retenu)
     .fetch_optional(&mut *conn)
     .await?;
 
@@ -513,13 +692,16 @@ async fn inscrire_reponse(
 
     let signalable =
         est_signalable(&mut *conn, epreuve.id, partie.utilisateur_id, issue).await?;
+    let solution = solution_de(&mut *conn, &epreuve).await?;
+    let jouee = jouee_depuis(&mut *conn, &epreuve, cle_retenue, detail_retenu, pays_retenu).await?;
 
     Ok(Correction {
         rang,
         epreuve_id: epreuve.id,
         issue: issue.to_string(),
-        bonne_cle: epreuve.bonne_reponse,
+        solution,
         cle_choisie: cle_retenue,
+        jouee,
         explication: epreuve.explication,
         lien,
         score_gagne,
@@ -650,7 +832,8 @@ pub async fn presenter_suivante(
     let mut precedente = None;
     if partie.presentee_at.is_some() {
         precedente = Some(
-            inscrire_reponse(&mut *conn, partie, regles, partie.rang_courant, None, None, maintenant)
+            inscrire_reponse(&mut *conn, partie, regles, partie.rang_courant,
+                             &ReponseJoueur::default(), None, maintenant)
                 .await?,
         );
     }
@@ -696,7 +879,7 @@ pub async fn repondre(
     partie: &mut PartieRow,
     regles: &ReglesJeu,
     rang: i16,
-    cle: Option<i16>,
+    reponse: &ReponseJoueur,
     issue_forcee: Option<&str>,
 ) -> Result<(Correction, bool), ApiErreur> {
     if let Some(deja) = correction_existante(&mut *conn, partie, rang).await? {
@@ -722,7 +905,7 @@ pub async fn repondre(
     }
 
     let correction =
-        inscrire_reponse(&mut *conn, partie, regles, rang, cle, issue_forcee, Utc::now()).await?;
+        inscrire_reponse(&mut *conn, partie, regles, rang, reponse, issue_forcee, Utc::now()).await?;
 
     let vient_de_finir = if rang as usize == partie.epreuve_ids.len() {
         terminer(&mut *conn, partie, regles).await?
@@ -745,7 +928,8 @@ pub async fn clore(
         return Ok(());
     }
     if partie.presentee_at.is_some() {
-        inscrire_reponse(&mut *conn, partie, regles, partie.rang_courant, None, None, Utc::now())
+        inscrire_reponse(&mut *conn, partie, regles, partie.rang_courant,
+                         &ReponseJoueur::default(), None, Utc::now())
             .await?;
     }
     sqlx::query(
@@ -1162,8 +1346,14 @@ pub struct EtatManche {
     /// `Some` quand la manche est close : les deux ont répondu (instant de la
     /// seconde réponse) ou le temps est écoulé (fin de la question).
     pub cloture: Option<DateTime<Utc>>,
-    /// Réponse de chaque joueur à cette manche : (utilisateur, clé choisie, issue).
-    pub reponses: Vec<(Uuid, Option<i16>, String)>,
+    /// Réponse de chaque joueur à cette manche.
+    pub reponses: Vec<ReponseManche>,
+}
+
+pub struct ReponseManche {
+    pub utilisateur_id: Uuid,
+    pub jouee: ReponseJoueur,
+    pub issue: String,
 }
 
 /// Lit l'état de la manche en cours d'un duel direct.
@@ -1182,8 +1372,11 @@ pub async fn etat_manche(
     let epreuve = charger_epreuve(&mut *conn, epreuve_id).await?;
     let fin_question = debut + Duration::milliseconds(delai_ms(regles, &epreuve));
 
-    let lignes: Vec<(Uuid, Option<i16>, String, DateTime<Utc>)> = sqlx::query_as(
-        "SELECT r.utilisateur_id, r.proposition_choisie, r.issue, r.created_at
+    #[allow(clippy::type_complexity)]
+    let lignes: Vec<(Uuid, Option<i16>, Option<Vec<i16>>, Option<Uuid>, String, DateTime<Utc>)> =
+        sqlx::query_as(
+        "SELECT r.utilisateur_id, r.proposition_choisie, r.reponse_detail, r.pays_choisi_id,
+                r.issue, r.created_at
            FROM jeu.reponse r
            JOIN jeu.partie p ON p.id = r.partie_id
           WHERE p.duel_id = $1 AND r.rang = $2",
@@ -1197,7 +1390,7 @@ pub async fn etat_manche(
     // Une réponse « sans réponse » est écrite à la clôture, pas par le joueur :
     // seules les vraies réponses ferment la manche avant son temps.
     let vraies: Vec<DateTime<Utc>> =
-        lignes.iter().filter(|l| l.2 != "sans_reponse").map(|l| l.3).collect();
+        lignes.iter().filter(|l| l.4 != "sans_reponse").map(|l| l.5).collect();
     let cloture = if vraies.len() >= 2 {
         vraies.iter().max().copied().map(|t| t.min(fin_question))
     } else if maintenant >= fin_question {
@@ -1206,14 +1399,13 @@ pub async fn etat_manche(
         None
     };
 
-    Ok(Some(EtatManche {
-        rang,
-        epreuve,
-        debut,
-        fin_question,
-        cloture,
-        reponses: lignes.into_iter().map(|l| (l.0, l.1, l.2)).collect(),
-    }))
+    let mut reponses = Vec::with_capacity(lignes.len());
+    for (utilisateur_id, cle, detail, pays_id, issue, _) in lignes {
+        let jouee = jouee_depuis(&mut *conn, &epreuve, cle, detail, pays_id).await?;
+        reponses.push(ReponseManche { utilisateur_id, jouee, issue });
+    }
+
+    Ok(Some(EtatManche { rang, epreuve, debut, fin_question, cloture, reponses }))
 }
 
 /// Avancement d'un duel DIRECT, résolu à la lecture comme tout le reste.
@@ -1329,9 +1521,11 @@ async fn resoudre_direct(
         // Manche close : celui qui n'a pas répondu est compté sans réponse.
         let mut parties = parties_verrouillees(&mut *conn, duel.id).await?;
         for partie in parties.iter_mut() {
-            let a_repondu = manche.reponses.iter().any(|r| r.0 == partie.utilisateur_id);
+            let a_repondu =
+                manche.reponses.iter().any(|r| r.utilisateur_id == partie.utilisateur_id);
             if !a_repondu && partie.etat == "en_cours" && partie.rang_courant == manche.rang {
-                repondre(&mut *conn, partie, regles, manche.rang, None, None).await?;
+                repondre(&mut *conn, partie, regles, manche.rang, &ReponseJoueur::default(), None)
+                    .await?;
             }
         }
 

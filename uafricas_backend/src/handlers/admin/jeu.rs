@@ -47,7 +47,7 @@ use crate::models::notification;
 use crate::models::pagination::{PaginatedResponse, PaginationParams};
 use crate::services::jeu::{self as moteur, SERVABLE_SQL};
 use crate::services::jeu_derivation::{self, FORMES};
-use crate::services::{audit, engagement};
+use crate::services::{audit, engagement, image_validation};
 use crate::verifier_permission;
 use crate::ApiResponse;
 
@@ -83,6 +83,7 @@ async fn charger_epreuve(pool: &PgPool, id: Uuid) -> Result<EpreuveAdmin, ApiErr
         .bind(id)
         .fetch_optional(pool)
         .await?
+        .map(EpreuveAdmin::avec_forme_attendue)
         .ok_or_else(|| ApiErreur::NonTrouve("Épreuve introuvable".into()))
 }
 
@@ -252,6 +253,8 @@ pub async fn lister_epreuves(
     .bind(pagination.offset())
     .fetch_all(pool.get_ref())
     .await?;
+    let epreuves: Vec<EpreuveAdmin> =
+        epreuves.into_iter().map(EpreuveAdmin::avec_forme_attendue).collect();
 
     Ok(HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -273,6 +276,22 @@ pub async fn obtenir_epreuve(
 
 /// Contrôles qui demandent la base : le module existe, et le contenu référencé
 /// est encore publié.
+/// Carte : un pays désigné par son code ISO2 est résolu en identifiant.
+async fn resoudre_pays_iso(pool: &PgPool, mut body: EpreuveRequest) -> Result<EpreuveRequest, ApiErreur> {
+    if body.reponse_pays_id.is_none() {
+        if let Some(iso) = body.reponse_pays_iso.as_deref().map(str::trim).filter(|i| !i.is_empty()) {
+            let id: Option<Uuid> =
+                sqlx::query_scalar("SELECT id FROM shared.pays WHERE LOWER(code_iso2) = LOWER($1)")
+                    .bind(iso)
+                    .fetch_optional(pool)
+                    .await?;
+            body.reponse_pays_id =
+                Some(id.ok_or_else(|| ApiErreur::Validation("Carte : pays inconnu".into()))?);
+        }
+    }
+    Ok(body)
+}
+
 async fn verifier_references(pool: &PgPool, epreuve: &EpreuveNettoyee) -> Result<(), ApiErreur> {
     let module_existe: bool =
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM jeu.module WHERE code = $1)")
@@ -281,6 +300,24 @@ async fn verifier_references(pool: &PgPool, epreuve: &EpreuveNettoyee) -> Result
             .await?;
     if !module_existe {
         return Err(ApiErreur::Validation("Module inconnu".into()));
+    }
+
+    // Carte : le pays attendu est l'un des 55 pays d'Afrique (feature 014).
+    if let Some(pays) = epreuve.reponse_pays_id {
+        let codes: Vec<String> = crate::constants::afripulse_pays_autorises::PAYS_AFRICAINS_ISO2
+            .iter()
+            .map(|c| c.to_lowercase())
+            .collect();
+        let africain: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM shared.pays WHERE id = $1 AND LOWER(code_iso2) = ANY($2))",
+        )
+        .bind(pays)
+        .bind(&codes)
+        .fetch_one(pool)
+        .await?;
+        if !africain {
+            return Err(ApiErreur::Validation("Carte : le pays attendu doit être un pays d'Afrique".into()));
+        }
     }
 
     if let (Some(type_source), Some(source_id)) = (&epreuve.type_source, epreuve.source_id) {
@@ -310,6 +347,7 @@ pub async fn creer_epreuve(
 ) -> Result<HttpResponse, ApiErreur> {
     verifier_permission!(admin, "jeu", "gerer");
 
+    let body = resoudre_pays_iso(pool.get_ref(), body.into_inner()).await?;
     let epreuve = body.nettoyer().map_err(ApiErreur::Validation)?;
     verifier_references(pool.get_ref(), &epreuve).await?;
 
@@ -317,8 +355,9 @@ pub async fn creer_epreuve(
         "INSERT INTO jeu.epreuve
             (module_code, enonce, media_type, media_url, propositions, bonne_reponse,
              explication, difficulte, theme, pays_id, origine, type_source, source_id,
-             etat, cree_par)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'saisie', $11, $12, 'candidate', $13)
+             etat, cree_par, type_reponse, solution, appariements, valeurs, reponse_pays_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'saisie', $11, $12, 'candidate', $13,
+                 $14, $15, $16, $17, $18)
          RETURNING id",
     )
     .bind(&epreuve.module)
@@ -334,6 +373,11 @@ pub async fn creer_epreuve(
     .bind(&epreuve.type_source)
     .bind(epreuve.source_id)
     .bind(admin.id)
+    .bind(&epreuve.type_reponse)
+    .bind(&epreuve.solution)
+    .bind(&epreuve.appariements)
+    .bind(&epreuve.valeurs)
+    .bind(epreuve.reponse_pays_id)
     .fetch_one(pool.get_ref())
     .await?;
 
@@ -368,10 +412,13 @@ pub async fn modifier_epreuve(
         ));
     }
 
+    let body = resoudre_pays_iso(pool.get_ref(), body.into_inner()).await?;
     let epreuve = body.nettoyer().map_err(ApiErreur::Validation)?;
     verifier_references(pool.get_ref(), &epreuve).await?;
     if avant.etat == "jouable" {
-        valider_publication(&epreuve.propositions, epreuve.explication.as_deref(), "conforme")
+        valider_publication(
+            &epreuve.type_reponse, &epreuve.propositions, epreuve.explication.as_deref(), "conforme",
+        )
             .map_err(ApiErreur::Validation)?;
     }
 
@@ -379,7 +426,8 @@ pub async fn modifier_epreuve(
         "UPDATE jeu.epreuve
             SET module_code = $2, enonce = $3, media_type = $4, media_url = $5,
                 propositions = $6, bonne_reponse = $7, explication = $8, difficulte = $9,
-                theme = $10, pays_id = $11, updated_at = NOW()
+                theme = $10, pays_id = $11, type_reponse = $12, solution = $13,
+                appariements = $14, valeurs = $15, reponse_pays_id = $16, updated_at = NOW()
           WHERE id = $1",
     )
     .bind(id)
@@ -393,6 +441,11 @@ pub async fn modifier_epreuve(
     .bind(epreuve.difficulte)
     .bind(&epreuve.theme)
     .bind(epreuve.pays_id)
+    .bind(&epreuve.type_reponse)
+    .bind(&epreuve.solution)
+    .bind(&epreuve.appariements)
+    .bind(&epreuve.valeurs)
+    .bind(epreuve.reponse_pays_id)
     .execute(pool.get_ref())
     .await?;
 
@@ -435,7 +488,9 @@ pub async fn publier_epreuve(
             avant.etat
         )));
     }
-    valider_publication(&avant.propositions, avant.explication.as_deref(), &avant.source_etat)
+    valider_publication(
+        &avant.type_reponse, &avant.propositions, avant.explication.as_deref(), &avant.source_etat,
+    )
         .map_err(ApiErreur::Validation)?;
 
     // Pour une épreuve dérivée, publier (après revue) vaut acceptation de la
@@ -531,6 +586,7 @@ pub async fn deriver(
     admin: AdminUtilisateur,
     req: HttpRequest,
     pool: web::Data<PgPool>,
+    upload_dir: web::Data<String>,
     body: web::Json<DerivationRequest>,
 ) -> Result<HttpResponse, ApiErreur> {
     verifier_permission!(admin, "jeu", "gerer");
@@ -549,7 +605,7 @@ pub async fn deriver(
 
     let mut par_forme = Vec::with_capacity(formes.len());
     for forme in formes {
-        par_forme.push(jeu_derivation::deriver_forme(pool.get_ref(), forme).await?);
+        par_forme.push(jeu_derivation::deriver_forme(pool.get_ref(), forme, upload_dir.get_ref()).await?);
     }
 
     let creees: i64 = par_forme.iter().map(|b| b.creees).sum();
@@ -612,6 +668,7 @@ pub async fn revue(
 
         if accepter {
             if let Err(raison) = valider_publication(
+                &epreuve.type_reponse,
                 &epreuve.propositions,
                 epreuve.explication.as_deref(),
                 &epreuve.source_etat,
@@ -684,7 +741,7 @@ pub async fn lister_signalements(
                 u.id AS auteur_id,
                 CASE WHEN u.deleted_at IS NULL THEN u.nom ELSE 'Membre' END AS auteur_nom,
                 CASE WHEN u.deleted_at IS NULL THEN u.prenom ELSE '' END AS auteur_prenom,
-                e.enonce, e.module_code, e.etat AS epreuve_etat, e.propositions, e.bonne_reponse
+                e.enonce, e.module_code, e.etat AS epreuve_etat, e.propositions, e.bonne_reponse, e.type_reponse
            FROM jeu.signalement_epreuve sg
            JOIN jeu.epreuve e ON e.id = sg.epreuve_id
            JOIN iam.utilisateur u ON u.id = sg.utilisateur_id
@@ -717,6 +774,7 @@ pub async fn lister_signalements(
                 epreuve_etat: l.epreuve_etat,
                 propositions: l.propositions,
                 bonne_reponse: l.bonne_reponse,
+                type_reponse: l.type_reponse,
                 signalements: vec![signalement],
             }),
         }
@@ -1068,6 +1126,12 @@ fn verifier_bornes(r: &ReglesJeu) -> Result<(), String> {
     entre("Duels comptés par paire et par jour", r.duels_comptes_par_paire_jour, 0, i16::MAX)?;
     entre("Duels comptés par membre et par jour", r.duels_comptes_par_membre_jour, 0, i16::MAX)?;
     entre("Joueurs comptés par pays", r.joueurs_par_pays, 1, 100)?;
+    entre("Temps ajouté à l'ordre et aux paires (secondes)", r.majoration_ordre_paires_s, 0, 60)?;
+    entre("Prime de participation à un concours", r.prime_concours_participation, 0, i16::MAX)?;
+    let podium = &r.prime_concours_podium;
+    if podium.len() != 3 || podium[2] < 0 || podium[0] < podium[1] || podium[1] < podium[2] {
+        return Err("Primes du podium d'un concours : trois montants positifs, du premier au troisième, sans augmenter".into());
+    }
     Ok(())
 }
 
@@ -1092,7 +1156,9 @@ pub async fn modifier_regles(
             prime_defi_jour = $9, prime_defi_semaine = $10, prime_duel_victoire = $11,
             prime_duel_nul = $12, delai_duel_h = $13, delai_direct_min = $14, grace_direct_s = $15,
             pause_revelation_s = $16, duels_comptes_par_paire_jour = $17,
-            duels_comptes_par_membre_jour = $18, joueurs_par_pays = $19, updated_at = NOW()
+            duels_comptes_par_membre_jour = $18, joueurs_par_pays = $19,
+            majoration_ordre_paires_s = $20, prime_concours_participation = $21,
+            prime_concours_podium = $22, updated_at = NOW()
           WHERE id",
     )
     .bind(body.taille_partie)
@@ -1114,6 +1180,9 @@ pub async fn modifier_regles(
     .bind(body.duels_comptes_par_paire_jour)
     .bind(body.duels_comptes_par_membre_jour)
     .bind(body.joueurs_par_pays)
+    .bind(body.majoration_ordre_paires_s)
+    .bind(body.prime_concours_participation)
+    .bind(&body.prime_concours_podium)
     .execute(pool.get_ref())
     .await?;
 
@@ -1485,4 +1554,113 @@ pub async fn annuler_gains(
     .await;
 
     Ok(HttpResponse::Ok().json(ApiResponse { success: true, data: Some(bilan), error: None }))
+}
+
+// ─── Médias d'épreuve (feature 014, research D4) ─────────────────────────────
+
+/// Plafond d'un extrait sonore : environ 30 s à 256 kbit/s. La durée exacte est
+/// contrôlée par le navigateur de l'administrateur avant l'envoi ; ce plafond est
+/// le garde-fou côté serveur, sans bibliothèque audio.
+const TAILLE_MAX_AUDIO_EPREUVE: usize = 1024 * 1024;
+/// Lecture bornée d'un fichier déposé : au-delà, `normaliser_photo` refuserait.
+const TAILLE_MAX_LECTURE: usize = 15 * 1024 * 1024;
+
+/// Reconnaît un extrait sonore par sa SIGNATURE binaire, jamais par son
+/// extension : un PNG renommé en `.mp3` est refusé.
+fn format_audio(octets: &[u8]) -> Option<&'static str> {
+    let debut = |s: &[u8]| octets.starts_with(s);
+    if debut(b"ID3") || (octets.len() > 1 && octets[0] == 0xFF && octets[1] & 0xE0 == 0xE0) {
+        Some("mp3")
+    } else if debut(b"OggS") {
+        Some("ogg")
+    } else if octets.len() > 12 && &octets[4..8] == b"ftyp" {
+        Some("m4a")
+    } else if debut(b"RIFF") && octets.len() > 12 && &octets[8..12] == b"WAVE" {
+        Some("wav")
+    } else {
+        None
+    }
+}
+
+/// POST /api/admin/jeu/medias (multipart : `type` = image|audio, `fichier`).
+///
+/// Renvoie le `media_url` à placer dans l'épreuve. Une photo est normalisée et
+/// ré-encodée, ce qui en retire les métadonnées EXIF (dont la position GPS).
+pub async fn deposer_media(
+    admin: AdminUtilisateur,
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    upload_dir: web::Data<String>,
+    mut payload: actix_multipart::Multipart,
+) -> Result<HttpResponse, ApiErreur> {
+    use futures_util::StreamExt;
+
+    verifier_permission!(admin, "jeu", "gerer");
+
+    let mut type_media: Option<String> = None;
+    let mut octets: Vec<u8> = Vec::new();
+
+    while let Some(item) = payload.next().await {
+        let mut champ = item.map_err(|e| ApiErreur::Upload(format!("Champ multipart invalide : {e}")))?;
+        let nom = champ.content_disposition().and_then(|cd| cd.get_name()).unwrap_or("").to_string();
+        let mut contenu: Vec<u8> = Vec::new();
+        while let Some(morceau) = champ.next().await {
+            let morceau = morceau.map_err(|e| ApiErreur::Upload(format!("Erreur de lecture : {e}")))?;
+            if contenu.len() + morceau.len() > TAILLE_MAX_LECTURE {
+                return Err(ApiErreur::Validation("Fichier trop lourd : 15 Mo au plus".into()));
+            }
+            contenu.extend_from_slice(&morceau);
+        }
+        match nom.as_str() {
+            "type" => type_media = Some(String::from_utf8_lossy(&contenu).trim().to_string()),
+            "fichier" => octets = contenu,
+            _ => {}
+        }
+    }
+
+    if octets.is_empty() {
+        return Err(ApiErreur::Validation("Aucun fichier reçu".into()));
+    }
+
+    let (sous_dossier, extension, contenu) = match type_media.as_deref() {
+        Some("image") => {
+            let (normalisee, format, _, _) =
+                image_validation::normaliser_photo(&octets).map_err(|e| ApiErreur::Validation(e.message()))?;
+            ("images", format.extension(), normalisee)
+        }
+        Some("audio") => {
+            if octets.len() > TAILLE_MAX_AUDIO_EPREUVE {
+                return Err(ApiErreur::Validation(
+                    "Extrait sonore trop lourd : 1 Mo au plus (environ 30 secondes)".into(),
+                ));
+            }
+            let ext = format_audio(&octets).ok_or_else(|| {
+                ApiErreur::Validation("Format sonore non reconnu : MP3, OGG, M4A ou WAV".into())
+            })?;
+            ("audios", ext, octets)
+        }
+        _ => return Err(ApiErreur::Validation("Type de média attendu : image ou audio".into())),
+    };
+
+    let nom_stocke = format!("{}.{}", Uuid::new_v4(), extension);
+    let dossier = format!("{}/jeu/{}", upload_dir.get_ref(), sous_dossier);
+    std::fs::create_dir_all(&dossier)
+        .map_err(|e| ApiErreur::Upload(format!("Impossible de créer le répertoire : {e}")))?;
+    std::fs::write(format!("{dossier}/{nom_stocke}"), &contenu)
+        .map_err(|e| ApiErreur::Upload(format!("Impossible d'écrire le fichier : {e}")))?;
+
+    let media_type = if sous_dossier == "images" { "image" } else { "audio" };
+    let media_url = format!("/uploads/jeu/{sous_dossier}/{nom_stocke}");
+
+    auditer(
+        pool.get_ref(), &req, admin.id, "MEDIA_EPREUVE_DEPOSE", "epreuve", None, None,
+        Some(serde_json::json!({ "media_type": media_type, "media_url": media_url, "octets": contenu.len() })),
+    )
+    .await;
+
+    Ok(HttpResponse::Created().json(ApiResponse {
+        success: true,
+        data: Some(serde_json::json!({ "media_type": media_type, "media_url": media_url })),
+        error: None,
+    }))
 }

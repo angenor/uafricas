@@ -12,7 +12,8 @@ import { messageErreurAdminJeu } from '~/composables/useAdminJeu'
 
 definePageMeta({ layout: 'admin', middleware: ['admin'] })
 
-type Regles = Record<string, number>
+// Les primes du podium d'un concours sont un tableau de trois montants (feature 014).
+type Regles = Record<string, number | number[]>
 
 const { adminFetch } = useAdmin()
 
@@ -30,6 +31,7 @@ const GROUPES: Array<{ titre: string, champs: Array<{ cle: string, libelle: stri
     { cle: 'taille_defi_semaine', libelle: 'Épreuves du défi de la semaine', min: 3, max: 30 },
     { cle: 'taille_duel', libelle: 'Épreuves par duel', min: 3, max: 30 },
     { cle: 'temps_epreuve_s', libelle: 'Temps par épreuve', min: 5, max: 120, unite: 's' },
+    { cle: 'majoration_ordre_paires_s', libelle: 'Temps ajouté à l\'ordre et aux paires', min: 0, max: 60, unite: 's' },
   ] },
   { titre: 'Score', champs: [
     { cle: 'score_facile', libelle: 'Épreuve facile', min: 1 },
