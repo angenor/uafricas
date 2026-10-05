@@ -344,6 +344,8 @@ onMounted(chargerContributions)
     </div>
 
     <template #rail>
+      <!-- Concours rattachés à ce module (feature 014) -->
+      <JeuPanneauConcours rattachement="badgoodhabit" />
       <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders" action-libelle="Réinitialiser" @action="reinitialiser">
         <div class="flex flex-col gap-5">
           <label class="relative block">

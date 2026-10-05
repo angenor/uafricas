@@ -132,6 +132,8 @@ onMounted(async () => {
     </div>
 
     <template #rail>
+      <!-- Concours rattachés à ce module (feature 014) -->
+      <JeuPanneauConcours rattachement="africans_radio" />
       <AfricansPanneau titre="Statistiques" icone="fa-solid fa-chart-line">
         <dl class="flex flex-col">
           <div

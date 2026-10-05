@@ -116,6 +116,8 @@
     </div>
 
     <template #rail>
+      <!-- Concours rattachés à ce module (feature 014) -->
+      <JeuPanneauConcours rattachement="africantives" />
       <AfricansPanneau titre="Filtres" icone="fa-solid fa-sliders" action-libelle="Réinitialiser" @action="resetFilters">
         <div class="flex flex-col gap-4">
           <!-- Le domaine tenait vingt PASTILLES au-dessus de la grille, soit

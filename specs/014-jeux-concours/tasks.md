@@ -99,6 +99,8 @@ Finitions terminées (T075 à T080) : **les 80 tâches sont faites**.
   - journal des gains cohérent ; non-régression de la 013.
 - **Écart de lecture à la recette** : les épreuves typées dérivées étaient jouables, alors qu'elles naissent candidates. L'audit montre une revue faite à la main dans Safari avec le compte test-admin : ce n'est pas un défaut.
 
+Complément après la livraison : FR-057 n'était tenu que sur les quatre modules jouables. `JeuPanneauActivites` ne s'affiche que pour un module ouvert au jeu, si bien qu'un concours rattaché à Afroculture n'apparaissait pas sur sa page. Le nouveau panneau `jeu/PanneauConcours.vue` (invisible sans concours en cours) est monté en tête du rail des 15 autres pages de module. Exception : `/medias/tele` (gabarit cinéma, sans rail).
+
 **Les cinq points de conception de [plan.md](./plan.md)**, rappelés dans les tâches qu'ils concernent (repère ⚠️ PCn) :
 - **PC1** : `resoudre_concours` est appelée par toute route qui lit un concours.
 - **PC2** : toutes les requêtes qui remplissent `EpreuveRow` lisent les nouvelles colonnes.

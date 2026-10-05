@@ -230,6 +230,8 @@ const infoPagination = computed(() => {
     </div>
 
     <template #rail>
+      <!-- Concours rattachés à ce module (feature 014) -->
+      <JeuPanneauConcours rattachement="rootstree" />
       <AfricansPanneau titre="Mon espace" icone="fa-solid fa-sitemap">
         <div class="flex flex-col gap-3">
           <AfricansBouton variante="secondaire" icone="fa-solid fa-diagram-project" vers="/arbre-genealogique/visualisation">

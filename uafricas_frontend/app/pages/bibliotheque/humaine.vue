@@ -349,6 +349,8 @@ const dateFr = (d: string) => new Date(d).toLocaleDateString('fr-FR')
     </div>
 
     <template #rail>
+      <!-- Concours rattachés à ce module (feature 014) -->
+      <JeuPanneauConcours rattachement="humantech" />
       <AfricansPanneau titre="Transmettre" icone="fa-solid fa-chalkboard-user">
         <div class="flex flex-col gap-3">
           <p class="text-[14px]/[1.4] text-af-corps">

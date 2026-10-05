@@ -95,7 +95,7 @@ Conséquence de H1 et H2 : les photos de concours ne portent pas de J'aime, puis
 
 ## Limites connues
 
-- Le panneau d'activités n'est monté que sur les quatre modules jouables : un concours rattaché à Afroculture apparaît sur l'espace Activités, pas encore sur la page d'Afroculture.
+- Un concours rattaché à Africans Télé n'apparaît pas sur `/medias/tele` : cette page utilise le gabarit cinéma, qui n'a pas de rail. Il reste visible sur l'espace Activités. Les 19 autres modules affichent leurs concours en cours dans leur rail (FR-057).
 - Une image source externe (`https://…`) n'est pas copiée lors de la dérivation : la copier demanderait un client HTTP.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
